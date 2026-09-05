@@ -26,6 +26,7 @@ interface Draft {
   units: PlacedUnit[]
   name: string
   tags: string[]
+  memo: string
   deckId: string | null
 }
 
@@ -37,6 +38,7 @@ export default function BoardTool({ data }: { data: SetData }) {
   const [units, setUnits] = useState<PlacedUnit[]>([])
   const [name, setName] = useState('')
   const [tags, setTags] = useState<string[]>([])
+  const [memo, setMemo] = useState('')
   const [deckId, setDeckId] = useState<string | null>(null)
 
   const [poolTab, setPoolTab] = useState<'champion' | 'item'>('champion')
@@ -62,6 +64,7 @@ export default function BoardTool({ data }: { data: SetData }) {
             setUnits(deck.units)
             setName(deck.name)
             setTags(deck.tags)
+            setMemo(deck.memo)
             setDeckId(deck.id)
           }
         } catch {
@@ -87,6 +90,7 @@ export default function BoardTool({ data }: { data: SetData }) {
           setUnits(draft.units ?? [])
           setName(draft.name ?? '')
           setTags(draft.tags ?? [])
+          setMemo(draft.memo ?? '')
           setDeckId(draft.deckId ?? null)
         }
       } catch {
@@ -104,9 +108,9 @@ export default function BoardTool({ data }: { data: SetData }) {
   // 작업 중인 내용은 새로고침해도 남아 있어야 한다
   useEffect(() => {
     if (!loaded) return
-    const draft: Draft = { units, name, tags, deckId }
+    const draft: Draft = { units, name, tags, memo, deckId }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-  }, [loaded, units, name, tags, deckId])
+  }, [loaded, units, name, tags, memo, deckId])
 
   // 안내 문구는 잠깐 보여주고 지운다
   useEffect(() => {
@@ -163,20 +167,25 @@ export default function BoardTool({ data }: { data: SetData }) {
     setUnits((prev) => prev.map((u) => (u.row === cell.row && u.col === cell.col ? { ...u, star } : u)))
   }, [])
 
-  /** 칸 위의 유닛에게 아이템을 낀다. 빈 칸이거나 이미 가득 찼거나 중복이면 안내만 하고 끝낸다. */
+  /**
+   * 칸 위의 유닛에게 아이템을 낀다. 빈 칸이거나 이미 가득 찼으면 안내만 하고 끝낸다.
+   * 같은 아이템을 여러 개 끼우는 건 실제 게임처럼 허용하고, 유니크 아이템만 중복을 막는다.
+   */
   const attachItem = useCallback(
     (itemId: string, cell: Cell) => {
       const unit = units.find((u) => u.row === cell.row && u.col === cell.col)
       if (!unit) return setStatus('빈 칸에는 아이템을 낄 수 없습니다. 유닛 위에 놓아 주세요.')
       if (unit.items.length >= MAX_ITEMS) return setStatus('아이템은 최대 3개까지 낄 수 있습니다.')
-      if (unit.items.includes(itemId)) return setStatus('이미 장착한 아이템입니다.')
+
+      const item = index.itemById.get(itemId)
+      if (item?.unique && unit.items.includes(itemId)) return setStatus('유니크 아이템은 중복으로 낄 수 없습니다.')
 
       setUnits((prev) =>
         prev.map((u) => (u.row === cell.row && u.col === cell.col ? { ...u, items: [...u.items, itemId] } : u))
       )
       setPendingItemId(null)
     },
-    [units]
+    [units, index]
   )
 
   // 손가락으로 같은 칸을 연달아 두 번 두드리면 빼기 위한 기록
@@ -258,6 +267,7 @@ export default function BoardTool({ data }: { data: SetData }) {
     setUnits([])
     setName('')
     setTags([])
+    setMemo('')
     setDeckId(null)
     setPendingChampionId(null)
     setPendingItemId(null)
@@ -272,7 +282,7 @@ export default function BoardTool({ data }: { data: SetData }) {
 
     setSaving(true)
     try {
-      const payload = { name: trimmed, tags, units, memo: '' }
+      const payload = { name: trimmed, tags, units, memo }
       const deck = deckId ? await updateDeck(deckId, payload) : await createDeck(data.set, payload)
       setDeckId(deck.id)
       setStatus(deckId ? '저장했습니다.' : '새 덱으로 저장했습니다.')
@@ -445,6 +455,21 @@ export default function BoardTool({ data }: { data: SetData }) {
           </p>
         </div>
       </div>
+
+      {/* 메모 */}
+      <section className="rounded-xl border border-ink-800 bg-ink-900 p-3">
+        <label htmlFor="deck-memo" className="mb-1.5 block text-xs font-semibold text-ink-400">
+          메모
+        </label>
+        <textarea
+          id="deck-memo"
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          rows={2}
+          placeholder="이 배치에 대해 기억해 둘 것 — 언제 쓰는 덱인지, 증강체 우선순위, 주의할 상대 등"
+          className="w-full resize-none rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
+        />
+      </section>
 
       {poolTab === 'champion' ? (
         <ChampionPool

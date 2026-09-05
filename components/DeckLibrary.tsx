@@ -183,6 +183,8 @@ export default function DeckLibrary({ data }: { data: SetData }) {
               </div>
             )}
 
+            {deck.memo && <p className="mt-2 line-clamp-2 text-[11px] text-ink-400">{deck.memo}</p>}
+
             <Link
               href={`/?deck=${deck.id}`}
               className="mt-3 block rounded-lg bg-ink-800 py-2 text-center text-xs font-semibold text-white transition-colors hover:bg-ink-700"

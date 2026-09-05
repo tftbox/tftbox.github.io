@@ -216,17 +216,18 @@ function ItemPicker({
 
       <div className="grid grid-cols-5 gap-2 p-3 sm:grid-cols-7">
         {list.map((item) => {
-          const used = disabledIds.includes(item.id)
+          // 유니크 아이템만 중복 장착을 막는다. 일반 아이템은 실제 게임처럼 여러 개 껴도 된다.
+          const blocked = item.unique && disabledIds.includes(item.id)
           return (
             <button
               key={item.id}
               type="button"
-              disabled={used}
+              disabled={blocked}
               onClick={() => onPick(item.id)}
-              title={item.name}
+              title={blocked ? `${item.name} (유니크 · 이미 장착함)` : item.name}
               className={clsx(
                 'aspect-square rounded-lg bg-ink-850 p-1 transition-transform active:scale-95',
-                used && 'opacity-30'
+                blocked && 'opacity-30'
               )}
             >
               {item.icon && <img src={item.icon} alt={item.name} className="h-full w-full object-contain" />}
