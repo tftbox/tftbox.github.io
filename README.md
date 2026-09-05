@@ -3,7 +3,7 @@
 롤토체스용 개인 도구. 배치판 · 유물 · 상징 · 저장한 덱을 한 곳에서 본다.
 모바일에서 쓰는 걸 우선으로 만들었다.
 
-**https://wogns20115-creator.github.io/tft-tool/**
+**https://tftbox.github.io/**
 
 `main` 브랜치에 올리면 GitHub Actions가 자동으로 다시 배포한다
 ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
