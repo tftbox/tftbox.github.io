@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink-950: #0a0d14;
+  --color-ink-900: #10141d;
+  --color-ink-850: #151b26;
+  --color-ink-800: #1b2230;
+  --color-ink-700: #273043;
+  --color-ink-600: #3a465e;
+  --color-ink-400: #7c8aa5;
+  --color-ink-200: #c3ccdd;
+
+  --color-accent: #4cc9f0;
+  --color-accent-dim: #1c5f77;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink-950);
+  color: var(--color-ink-200);
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+  /* 모바일에서 가로로 밀리는 것을 막는다 */
+  overflow-x: hidden;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+  outline: none;
+}
+
+/* 육각형 타일. TFT 배치판은 위아래로 꼭짓점이 있는 형태다. */
+.hex {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+
+/* 가로 스크롤 영역의 스크롤바를 얇게 */
+.thin-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-600) transparent;
+}
+.thin-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-ink-600);
+  border-radius: 999px;
+}
+
+/* 모바일 하단 탭바에 가리지 않도록 하는 여백 (iOS 홈 인디케이터 포함) */
+.pb-navbar {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .pb-navbar {
+    padding-bottom: 2rem;
+  }
+}
+
+/* 스킬/특성 설명은 줄바꿈이 살아 있어야 읽힌다 */
+.desc {
+  white-space: pre-line;
+  word-break: keep-all;
+}

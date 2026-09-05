@@ -1,0 +1,54 @@
+name: GitHub Pages 배포
+
+on:
+  push:
+    branches: [main]
+  # 필요할 때 Actions 탭에서 손으로 돌릴 수도 있게 해 둔다
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치지 않게 한 번에 하나만 돌린다
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          # https://<계정>.github.io/tft-tool/ 로 서비스되므로 하위 경로를 알려준다
+          NEXT_PUBLIC_BASE_PATH: /tft-tool
+
+      # _next 처럼 밑줄로 시작하는 폴더가 무시되지 않게 한다
+      - run: touch out/.nojekyll
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
