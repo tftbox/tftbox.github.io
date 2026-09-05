@@ -3,12 +3,19 @@
 롤토체스용 개인 도구. 배치판 · 유물 · 상징 · 저장한 덱을 한 곳에서 본다.
 모바일에서 쓰는 걸 우선으로 만들었다.
 
+**https://wogns20115-creator.github.io/tft-tool/**
+
+`main` 브랜치에 올리면 GitHub Actions가 자동으로 다시 배포한다
+([.github/workflows/deploy.yml](.github/workflows/deploy.yml)).
+
 ## 시작하기
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
 ```
+
+평소에는 위 주소로 그냥 쓰면 되고, 아래 내용은 코드를 고칠 때만 필요하다.
 
 처음 한 번은 Supabase에 테이블을 만들어야 한다.
 Supabase 대시보드 → SQL Editor에 [`supabase/schema.sql`](supabase/schema.sql)을 붙여넣고 실행하면 된다.
