@@ -161,6 +161,7 @@ export default function UnitSheet({ unit, index, onChange, onRemove, onClose }: 
 
 const TABS = [
   { key: 'combined', label: '조합' },
+  { key: 'radiant', label: '찬란한' },
   { key: 'artifacts', label: '유물' },
   { key: 'emblems', label: '상징' },
   { key: 'components', label: '기본' },
@@ -180,6 +181,9 @@ function ItemPicker({
   const [tab, setTab] = useState<(typeof TABS)[number]['key']>('combined')
   const [query, setQuery] = useState('')
 
+  // 찬란한 아이템처럼 시즌에 따라 아예 없는 분류는 탭을 띄우지 않는다
+  const tabs = TABS.filter((t) => index.data.items[t.key].length > 0)
+
   const q = query.trim().toLowerCase()
   const list = index.data.items[tab].filter((i) => !q || i.name.toLowerCase().includes(q))
 
@@ -194,7 +198,7 @@ function ItemPicker({
         </div>
 
         <div className="flex gap-1">
-          {TABS.map((t) => (
+          {tabs.map((t) => (
             <button
               key={t.key}
               type="button"

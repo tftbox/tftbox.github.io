@@ -21,6 +21,10 @@ export default function ArtifactBrowser({ artifacts, setNumber }: { artifacts: I
   const [filter, setFilter] = useState<Filter>('all')
   const [opened, setOpened] = useState<Item | null>(null)
 
+  // 시즌 전용 유물을 따로 구분할 수 없는 시즌에서는 그 필터를 감춘다
+  const hasExclusive = useMemo(() => artifacts.some((a) => a.setExclusive), [artifacts])
+  const visibleFilters = FILTERS.filter((f) => f.key !== 'exclusive' || hasExclusive)
+
   const list = useMemo(() => {
     const q = query.trim().toLowerCase()
     return artifacts.filter((item) => {
@@ -56,7 +60,7 @@ export default function ArtifactBrowser({ artifacts, setNumber }: { artifacts: I
         </div>
 
         <div className="mt-2 flex gap-1">
-          {FILTERS.map((f) => (
+          {visibleFilters.map((f) => (
             <button
               key={f.key}
               type="button"

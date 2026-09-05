@@ -1,6 +1,6 @@
 // 동기화 스크립트가 만들어내는 데이터의 형태 (public/data/set{N}.json)
 
-export type ItemKind = 'component' | 'combined' | 'artifact' | 'emblem'
+export type ItemKind = 'component' | 'combined' | 'radiant' | 'artifact' | 'emblem'
 
 export interface ItemSource {
   id: string
@@ -65,6 +65,8 @@ export interface SetData {
   items: {
     components: Item[]
     combined: Item[]
+    /** 찬란한 아이템. 없는 시즌도 있다 */
+    radiant: Item[]
     artifacts: Item[]
     emblems: Item[]
   }

@@ -11,9 +11,11 @@ export interface SetIndex {
 }
 
 export function buildIndex(data: SetData): SetIndex {
+  // 분류가 늘어나도 빠뜨리지 않도록 items 아래를 통째로 훑는다
   const itemById = new Map<string, Item>()
-  const allItems = [...data.items.components, ...data.items.combined, ...data.items.artifacts, ...data.items.emblems]
-  for (const i of allItems) itemById.set(i.id, i)
+  for (const group of Object.values(data.items)) {
+    for (const item of group) itemById.set(item.id, item)
+  }
 
   const emblemTrait = new Map<string, string>()
   for (const e of data.items.emblems) if (e.traitName) emblemTrait.set(e.id, e.traitName)

@@ -1,35 +1,39 @@
 // TFT 데이터 동기화 스크립트
 //
 //   node scripts/sync-tft-data.mjs          -> 기본 세트(SET_NUMBER) 갱신
-//   SET=18 node scripts/sync-tft-data.mjs   -> 다음 시즌으로 전환
+//   SET=19 node scripts/sync-tft-data.mjs   -> 다음 시즌으로 전환
 //
 // Community Dragon의 통합 JSON(약 24MB)을 받아 필요한 부분만 추려
 // public/data/set{N}.json 으로 저장하고, 아이콘 이미지를 public/img 아래에 내려받는다.
+//
+// 주의: 세트마다 게임 내부 이름 규칙이 다르다.
+//   시즌 17 -> 챔피언 TFT17_Briar, 아이템은 공용 네임스페이스 TFT_Item_*
+//   시즌 18 -> 챔피언 DA_18_Sentry, 아이템은 세트 전용 네임스페이스 DA_*
+// 그래서 접두사를 박아 두지 않고 데이터에서 알아내도록 만들었다.
 
 import { mkdir, writeFile, access } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const SET_NUMBER = Number(process.env.SET || 17)
+const SET_NUMBER = Number(process.env.SET || 18)
 
 const SOURCE = 'https://raw.communitydragon.org/latest/cdragon/tft/ko_kr.json'
 const GAME_CDN = 'https://raw.communitydragon.org/latest/game/'
 
-// 조합용 기본 아이템 10종
-const COMPONENTS = [
-  'TFT_Item_BFSword',
-  'TFT_Item_RecurveBow',
-  'TFT_Item_NeedlesslyLargeRod',
-  'TFT_Item_TearOfTheGoddess',
-  'TFT_Item_ChainVest',
-  'TFT_Item_NegatronCloak',
-  'TFT_Item_GiantsBelt',
-  'TFT_Item_SparringGloves',
-  'TFT_Item_Spatula',
-  'TFT_Item_FryingPan',
+// 기본 아이템을 화면에 늘어놓을 순서 (접두사를 뗀 이름 기준)
+const COMPONENT_ORDER = [
+  'BFSword',
+  'RecurveBow',
+  'NeedlesslyLargeRod',
+  'TearOfTheGoddess',
+  'ChainVest',
+  'NegatronCloak',
+  'GiantsBelt',
+  'SparringGloves',
+  'Spatula',
+  'FryingPan',
 ]
-const COMPONENT_SET = new Set(COMPONENTS)
 
 // 특성 단계 색상. effects[].style 값 기준 (데이터에서 실제로 쓰이는 값만 등장)
 const STYLE_MAP = { 0: 'none', 1: 'bronze', 2: 'silver', 3: 'silver', 4: 'unique', 5: 'gold', 6: 'prismatic' }
@@ -190,26 +194,38 @@ async function downloadAll(jobs, concurrency = 12) {
   return stats
 }
 
+/** apiName의 마지막 구간 (TFT_Item_BFSword / DA_Component_BFSword → BFSword) */
+const baseName = (apiName) => apiName.split('_').pop()
+
+/** 이 세트 챔피언들이 공통으로 쓰는 코드 접두사를 알아낸다 (TFT17_ / DA_) */
+function detectCodePrefix(champions) {
+  const counts = new Map()
+  for (const c of champions) {
+    const head = c.apiName.split('_')[0]
+    counts.set(head, (counts.get(head) || 0) + 1)
+  }
+  const [head] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]
+  return `${head}_`
+}
+
 async function main() {
   const raw = await fetchJson(SOURCE)
   const set = raw.sets[String(SET_NUMBER)]
   if (!set) throw new Error(`세트 ${SET_NUMBER} 데이터를 찾을 수 없습니다.`)
 
-  const prefix = `TFT${SET_NUMBER}_`
-
-  // ---- 특성 ----------------------------------------------------------------
-  // 같은 이름의 특성이 여러 개인 경우(예: 별돌보미의 내부 변형들) apiName이 가장
-  // 짧은 것을 대표로 쓴다.
-  const traitByName = new Map()
-  for (const t of set.traits) {
-    const prev = traitByName.get(t.name)
-    if (!prev || t.apiName.length < prev.apiName.length) traitByName.set(t.name, t)
-  }
-
   // ---- 챔피언 --------------------------------------------------------------
-  // 골렘/훈련봇 같은 비플레이 유닛을 걸러낸다 (해당 세트 prefix + 특성 보유)
-  const champions = set.champions
-    .filter((c) => c.apiName.startsWith(prefix) && (c.traits || []).length > 0)
+  // 세트 목록에는 골렘·훈련봇·모루처럼 모든 세트가 공유하는 유닛도 섞여 있다.
+  // 아이콘 경로에 tft{세트번호}가 들어 있는지로 이번 세트 유닛만 골라낸다.
+  const iconBelongsToSet = new RegExp(`tft${SET_NUMBER}_`)
+  const rawChampions = set.champions.filter(
+    (c) => (c.traits || []).length > 0 && iconBelongsToSet.test(c.tileIcon || '')
+  )
+  if (!rawChampions.length) throw new Error(`세트 ${SET_NUMBER}의 챔피언을 찾지 못했습니다.`)
+
+  const codePrefix = detectCodePrefix(rawChampions)
+  log(`세트 ${SET_NUMBER} · 코드 접두사 "${codePrefix}"`)
+
+  const champions = rawChampions
     .map((c) => ({
       id: c.apiName,
       // 특성만 바꿔 단 변형 유닛(미스 포츈의 "특성 선택" 같은 것)은 이름이 원본과
@@ -236,29 +252,6 @@ async function main() {
     }))
     .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name, 'ko'))
 
-  // 챔피언이 실제로 쓰는 특성만 남긴다
-  const usedTraitNames = new Set(champions.flatMap((c) => c.traits))
-  const traits = [...traitByName.values()]
-    .filter((t) => usedTraitNames.has(t.name))
-    .map((t) => {
-      const effects = (t.effects || [])
-        .slice()
-        .sort((a, b) => a.minUnits - b.minUnits)
-        .map((e) => ({
-          min: e.minUnits,
-          max: e.maxUnits >= 25000 ? null : e.maxUnits,
-          style: STYLE_MAP[e.style] || 'bronze',
-        }))
-      return {
-        id: t.apiName,
-        name: t.name,
-        icon: iconPath(t.icon),
-        desc: cleanTraitDesc(t.desc, (t.effects || []).slice().sort((a, b) => a.minUnits - b.minUnits)),
-        effects,
-      }
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
-
   // ---- 아이템 --------------------------------------------------------------
   const itemById = new Map(raw.items.map((i) => [i.apiName, i]))
   const toItem = (i, extra = {}) => ({
@@ -274,53 +267,114 @@ async function main() {
     ...extra,
   })
 
-  const components = COMPONENTS.map((id) => itemById.get(id))
-    .filter(Boolean)
+  // 기본 아이템. 세트가 자기 네임스페이스를 쓰는지(시즌 18) 공용을 쓰는지(시즌 17)를
+  // 여기서 판별하고, 나머지 아이템 분류도 그 판단을 따른다.
+  const tagged = raw.items.filter((i) => (i.tags || []).includes('component'))
+  const ownComponents = tagged.filter((i) => i.apiName.startsWith(codePrefix))
+  const usesOwnNamespace = ownComponents.length >= COMPONENT_ORDER.length
+  const rawComponents = usesOwnNamespace ? ownComponents : tagged.filter((i) => /^TFT_Item_/.test(i.apiName))
+
+  const components = rawComponents
+    .slice()
+    .sort((a, b) => COMPONENT_ORDER.indexOf(baseName(a.apiName)) - COMPONENT_ORDER.indexOf(baseName(b.apiName)))
     .map((i) => toItem(i))
 
-  const combined = raw.items
-    .filter(
-      (i) =>
-        /^TFT_Item_/.test(i.apiName) &&
-        !i.isAugment &&
-        !/Emblem/i.test(i.apiName) &&
-        !/^TFT_Item_Corrupted/.test(i.apiName) &&
-        (i.composition || []).length === 2 &&
-        i.composition.every((c) => COMPONENT_SET.has(c))
-    )
-    .map((i) => toItem(i))
+  const componentIds = new Set(rawComponents.map((i) => i.apiName))
+
+  // 조합 아이템: 위에서 정한 기본 아이템 두 개로 만들어지는 것.
+  // 상징은 따로 다루고, 찬란한/오염된 변형은 원본과 이름이 겹쳐서 제외한다.
+  const rawCombined = raw.items.filter(
+    (i) =>
+      !i.isAugment &&
+      (i.composition || []).length === 2 &&
+      i.composition.every((c) => componentIds.has(c)) &&
+      !/상징$/.test(i.name || '') &&
+      !/Radiant$/i.test(i.apiName) &&
+      !/Corrupted/i.test(i.apiName)
+  )
+  const combined = [...rawCombined].sort((a, b) => a.name.localeCompare(b.name, 'ko')).map((i) => toItem(i))
+
+  // 찬란한 아이템: 조합 아이템 id 뒤에 Radiant가 붙은 것 (없는 세트도 있다).
+  // 밑줄을 끼워 넣은 것(DA_SpiritVisage_Radiant)과 붙여 쓴 것(DA_VoidStaffRadiant)이 섞여 있다.
+  const combinedIds = new Set(rawCombined.map((i) => i.apiName))
+  const radiantBase = (apiName) => apiName.replace(/_?Radiant$/, '')
+  const radiant = raw.items
+    .filter((i) => !i.isAugment && /_?Radiant$/.test(i.apiName) && combinedIds.has(radiantBase(i.apiName)))
     .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+    .map((i) => toItem(i))
 
-  // 유물: 공용 풀(TFT_Item_Artifact_*) + 해당 세트 전용(TFT{N}_Item_Artifact_*)
-  const artifacts = raw.items
-    .filter(
-      (i) =>
-        !i.isAugment &&
-        (/^TFT_Item_Artifact_/.test(i.apiName) || new RegExp(`^${prefix}Item_Artifact_`).test(i.apiName))
+  // 유물
+  const ownArtifactRe = new RegExp(`^${codePrefix}(Item_)?Artifact_`)
+  const artifactSources = usesOwnNamespace
+    ? raw.items.filter((i) => !i.isAugment && ownArtifactRe.test(i.apiName))
+    : raw.items.filter((i) => !i.isAugment && (/^TFT_Item_Artifact_/.test(i.apiName) || ownArtifactRe.test(i.apiName)))
+
+  const artifacts = artifactSources
+    .map((i) =>
+      toItem(i, {
+        // 공용 풀을 쓰는 세트에서만 "이번 시즌 전용"을 구분할 수 있다
+        setExclusive: !usesOwnNamespace && i.apiName.startsWith(codePrefix),
+      })
     )
-    .map((i) => toItem(i, { setExclusive: i.apiName.startsWith(prefix) }))
     .sort((a, b) => Number(a.setExclusive) - Number(b.setExclusive) || a.name.localeCompare(b.name, 'ko'))
 
-  // 상징: 이름에서 "상징"을 떼면 특성 이름이 된다
-  const traitNameSet = new Set(traits.map((t) => t.name))
-  const emblems = raw.items
-    .filter((i) => i.apiName.startsWith(prefix) && /Emblem/i.test(i.apiName) && /상징$/.test(i.name || ''))
-    .map((i) => {
-      const traitName = i.name.replace(/\s*상징$/, '')
-      return toItem(i, {
-        traitName: traitNameSet.has(traitName) ? traitName : null,
-        craftable: (i.composition || []).length === 2,
-      })
-    })
-    .sort((a, b) => Number(!a.craftable) - Number(!b.craftable) || a.name.localeCompare(b.name, 'ko'))
+  // 상징: 이름에서 "상징"을 떼면 특성 이름이 된다.
+  // 같은 특성의 상징이 여러 개 있으면(강화판 등) 조합 가능한 쪽을 대표로 남긴다.
+  const emblemByTrait = new Map()
+  for (const i of raw.items) {
+    if (!i.apiName.startsWith(codePrefix) || !/상징$/.test(i.name || '')) continue
+    const traitName = i.name.replace(/\s*상징$/, '')
+    const craftable = (i.composition || []).length === 2
+    const prev = emblemByTrait.get(traitName)
+    if (!prev || (craftable && !prev.craftable) || (craftable === prev.craftable && i.apiName.length < prev.item.apiName.length)) {
+      emblemByTrait.set(traitName, { item: i, craftable })
+    }
+  }
 
-  // 특성과 연결되지 않는 항목(상점의 "무작위 상징" 등)은 툴에서 쓸 수 없으므로 제외
-  const dropped = emblems.filter((e) => !e.traitName)
-  if (dropped.length) log('제외한 상징 →', dropped.map((e) => e.name).join(', '))
-  const realEmblems = emblems.filter((e) => e.traitName)
+  // ---- 특성 ----------------------------------------------------------------
+  // 같은 이름의 특성이 여러 개면(예: 시즌 17 별돌보미의 내부 변형들) apiName이 짧은 쪽을 쓴다
+  const traitByName = new Map()
+  for (const t of set.traits) {
+    const prev = traitByName.get(t.name)
+    if (!prev || t.apiName.length < prev.apiName.length) traitByName.set(t.name, t)
+  }
+
+  // 챔피언이 쓰는 특성 + 상징으로만 붙일 수 있는 특성을 남긴다
+  const neededTraits = new Set([...champions.flatMap((c) => c.traits), ...emblemByTrait.keys()])
+  const traits = [...traitByName.values()]
+    .filter((t) => neededTraits.has(t.name))
+    .map((t) => {
+      const sorted = (t.effects || []).slice().sort((a, b) => a.minUnits - b.minUnits)
+      return {
+        id: t.apiName,
+        name: t.name,
+        icon: iconPath(t.icon),
+        desc: cleanTraitDesc(t.desc, sorted),
+        effects: sorted.map((e) => ({
+          min: e.minUnits,
+          max: e.maxUnits >= 25000 ? null : e.maxUnits,
+          style: STYLE_MAP[e.style] || 'bronze',
+        })),
+      }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+
+  // 특성과 짝이 맞지 않는 상징(상점의 "무작위 상징" 등)은 툴에서 쓸 수 없으므로 제외
+  const traitNameSet = new Set(traits.map((t) => t.name))
+  const dropped = []
+  const emblems = []
+  for (const [traitName, { item, craftable }] of emblemByTrait) {
+    if (!traitNameSet.has(traitName)) {
+      dropped.push(item.name)
+      continue
+    }
+    emblems.push(toItem(item, { traitName, craftable }))
+  }
+  emblems.sort((a, b) => Number(!a.craftable) - Number(!b.craftable) || a.name.localeCompare(b.name, 'ko'))
+  if (dropped.length) log('특성과 연결되지 않아 제외 →', dropped.join(', '))
 
   // ---- 이미지 --------------------------------------------------------------
-  const allItems = [...components, ...combined, ...artifacts, ...realEmblems]
+  const allItems = [...components, ...combined, ...radiant, ...artifacts, ...emblems]
   const imgJobs = []
   const register = (remote, kind) => {
     if (!remote) return null
@@ -351,17 +405,18 @@ async function main() {
     generatedAt: new Date().toISOString(),
     champions,
     traits,
-    items: { components, combined, artifacts, emblems: realEmblems },
+    items: { components, combined, radiant, artifacts, emblems },
   }
 
   await mkdir(path.join(ROOT, 'public', 'data'), { recursive: true })
   const outFile = path.join(ROOT, 'public', 'data', `set${SET_NUMBER}.json`)
-  await writeFile(outFile, JSON.stringify(payload))
-  const size = (JSON.stringify(payload).length / 1024).toFixed(0)
+  const json = JSON.stringify(payload)
+  await writeFile(outFile, json)
 
-  log(`저장 완료: public/data/set${SET_NUMBER}.json (${size}KB)`)
+  log(`저장 완료: public/data/set${SET_NUMBER}.json (${(json.length / 1024).toFixed(0)}KB)`)
   log(
-    `챔피언 ${champions.length} · 특성 ${traits.length} · 조합 ${combined.length} · 유물 ${artifacts.length} · 상징 ${realEmblems.length}`
+    `챔피언 ${champions.length} · 특성 ${traits.length} · 기본 ${components.length} · 조합 ${combined.length} · ` +
+      `찬란한 ${radiant.length} · 유물 ${artifacts.length} · 상징 ${emblems.length}`
   )
 }
 

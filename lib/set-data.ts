@@ -7,7 +7,7 @@ import type { SetData } from './types'
  * 다음 시즌으로 넘어갈 때는 `SET=18 npm run sync-data` 로 데이터를 받은 뒤
  * 이 값만 바꾸면 된다.
  */
-export const CURRENT_SET = 17
+export const CURRENT_SET = 18
 
 /** 하위 경로에 배포될 때(GitHub Pages) 아이콘 주소 앞에 붙는 값 */
 const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || ''
