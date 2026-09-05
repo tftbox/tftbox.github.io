@@ -5,6 +5,9 @@ import { usePathname } from 'next/navigation'
 import { Gem, Grid3x3, Library, Sparkles } from 'lucide-react'
 import clsx from 'clsx'
 
+/** 화면에 표시되는 사이트 이름. 주소(tftbox.github.io)는 그대로 두고 이 글자만 바꾼다. */
+const SITE_NAME = '밤돌지지 - 얘들아 롤체하자'
+
 const TABS = [
   { href: '/', label: '배치툴', Icon: Grid3x3 },
   { href: '/artifacts', label: '유물', Icon: Gem },
@@ -22,7 +25,7 @@ export default function NavBar({ setNumber }: { setNumber: number }) {
       <header className="sticky top-0 z-40 hidden border-b border-ink-800 bg-ink-950/90 backdrop-blur md:block">
         <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-6 px-5">
           <Link href="/" className="flex items-baseline gap-2">
-            <span className="text-lg font-bold tracking-tight text-white">TFT 툴</span>
+            <span className="text-lg font-bold tracking-tight text-white">{SITE_NAME}</span>
             <span className="text-xs text-ink-400">시즌 {setNumber}</span>
           </Link>
           <nav className="flex items-center gap-1">
@@ -45,8 +48,8 @@ export default function NavBar({ setNumber }: { setNumber: number }) {
 
       {/* 모바일: 상단 타이틀 + 하단 탭바 */}
       <header className="sticky top-0 z-40 flex h-12 items-center justify-between border-b border-ink-800 bg-ink-950/90 px-4 backdrop-blur md:hidden">
-        <span className="font-bold text-white">TFT 툴</span>
-        <span className="text-xs text-ink-400">시즌 {setNumber}</span>
+        <span className="min-w-0 flex-1 truncate font-bold text-white">{SITE_NAME}</span>
+        <span className="shrink-0 pl-2 text-xs text-ink-400">시즌 {setNumber}</span>
       </header>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-ink-800 bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">

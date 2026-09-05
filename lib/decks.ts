@@ -6,6 +6,9 @@ import type { Deck, Note, NoteKind, PlacedUnit } from './types'
 const DECK_TABLE = 'tft_decks'
 const NOTE_TABLE = 'tft_notes'
 
+/** 덱을 수정하려 했는데 그 id의 행이 이미 없을 때 (다른 곳에서 지워졌거나, 링크가 오래됐거나) */
+export class DeckNotFoundError extends Error {}
+
 /**
  * Supabase가 돌려주는 메시지는 그대로 보여주면 무슨 말인지 알기 어렵다.
  * 특히 테이블을 아직 만들지 않았을 때가 그렇다.
@@ -13,6 +16,10 @@ const NOTE_TABLE = 'tft_notes'
 function fail(error: { code?: string; message: string }): never {
   if (error.code === 'PGRST205' || /Could not find the table/i.test(error.message)) {
     throw new Error('Supabase에 테이블이 아직 없습니다. supabase/schema.sql을 SQL Editor에서 실행해 주세요.')
+  }
+  // PGRST116: .single()에 걸리는 행이 0개 — update/select 대상이 이미 사라진 경우다
+  if (error.code === 'PGRST116') {
+    throw new DeckNotFoundError('이 덱은 더 이상 존재하지 않습니다.')
   }
   throw new Error(error.message)
 }

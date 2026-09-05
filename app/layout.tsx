@@ -4,7 +4,7 @@ import NavBar from '@/components/NavBar'
 import { CURRENT_SET } from '@/lib/set-data'
 
 export const metadata: Metadata = {
-  title: 'TFT 툴',
+  title: '밤돌지지 - 얘들아 롤체하자',
   description: '배치 · 유물 · 상징을 한 곳에서 보는 롤토체스 도구',
 }
 

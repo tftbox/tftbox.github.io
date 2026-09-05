@@ -6,7 +6,7 @@ import { Gem, Link2, RotateCcw, Save, Swords, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
-import { createDeck, getDeck, updateDeck } from '@/lib/decks'
+import { createDeck, DeckNotFoundError, getDeck, updateDeck } from '@/lib/decks'
 import { decodeUnits, encodeUnits } from '@/lib/deck-url'
 import HexBoard from './HexBoard'
 import SynergyPanel from './SynergyPanel'
@@ -15,20 +15,10 @@ import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
-const DRAFT_KEY = 'tft-tool:draft'
-
 /** 이 시간 안에 같은 칸을 다시 두드리면 "두 번 두드림"으로 본다 */
 const DOUBLE_TAP_MS = 400
 
 const MAX_ITEMS = 3
-
-interface Draft {
-  units: PlacedUnit[]
-  name: string
-  tags: string[]
-  memo: string
-  deckId: string | null
-}
 
 export default function BoardTool({ data }: { data: SetData }) {
   const index = useMemo(() => buildIndex(data), [data])
@@ -47,12 +37,19 @@ export default function BoardTool({ data }: { data: SetData }) {
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
-  const [loaded, setLoaded] = useState(false)
 
   const deckParam = searchParams.get('deck')
   const boardParam = searchParams.get('b')
 
-  // 링크로 들어왔으면 그쪽을 우선하고, 아니면 쓰던 작업을 복구한다
+  /**
+   * 링크로 들어왔을 때만 그 내용을 불러온다.
+   *
+   * 아무 링크 없이 배치툴에 들어오면 항상 빈 판으로 시작한다 — 예전엔 마지막
+   * 작업을 브라우저에 남겨 뒀다가 다시 들어올 때 복구했는데, 계속 남의 덱을
+   * 불러다 쓰는 사람 입장에서는 매번 지난 흔적을 손으로 지워야 해서 오히려
+   * 불편했다. 저장은 "저장" 버튼을 눌러야만 되고, 그건 그대로 Supabase에
+   * 남으니 배치툴 화면 자체는 그냥 매번 깨끗하게 시작하는 게 낫다.
+   */
   useEffect(() => {
     let cancelled = false
 
@@ -70,7 +67,6 @@ export default function BoardTool({ data }: { data: SetData }) {
         } catch {
           if (!cancelled) setStatus('덱을 불러오지 못했습니다.')
         }
-        if (!cancelled) setLoaded(true)
         return
       }
 
@@ -79,24 +75,7 @@ export default function BoardTool({ data }: { data: SetData }) {
         const itemIds = [...index.itemById.keys()]
         const decoded = decodeUnits(boardParam, championIds, itemIds)
         if (!cancelled && decoded) setUnits(decoded)
-        if (!cancelled) setLoaded(true)
-        return
       }
-
-      try {
-        const raw = localStorage.getItem(DRAFT_KEY)
-        if (raw && !cancelled) {
-          const draft = JSON.parse(raw) as Draft
-          setUnits(draft.units ?? [])
-          setName(draft.name ?? '')
-          setTags(draft.tags ?? [])
-          setMemo(draft.memo ?? '')
-          setDeckId(draft.deckId ?? null)
-        }
-      } catch {
-        // 저장된 작업이 깨져 있으면 그냥 빈 판으로 시작한다
-      }
-      if (!cancelled) setLoaded(true)
     }
 
     restore()
@@ -104,13 +83,6 @@ export default function BoardTool({ data }: { data: SetData }) {
       cancelled = true
     }
   }, [deckParam, boardParam, data.champions, index.itemById])
-
-  // 작업 중인 내용은 새로고침해도 남아 있어야 한다
-  useEffect(() => {
-    if (!loaded) return
-    const draft: Draft = { units, name, tags, memo, deckId }
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(draft))
-  }, [loaded, units, name, tags, memo, deckId])
 
   // 안내 문구는 잠깐 보여주고 지운다
   useEffect(() => {
@@ -283,9 +255,26 @@ export default function BoardTool({ data }: { data: SetData }) {
     setSaving(true)
     try {
       const payload = { name: trimmed, tags, units, memo }
-      const deck = deckId ? await updateDeck(deckId, payload) : await createDeck(data.set, payload)
-      setDeckId(deck.id)
-      setStatus(deckId ? '저장했습니다.' : '새 덱으로 저장했습니다.')
+
+      if (!deckId) {
+        const deck = await createDeck(data.set, payload)
+        setDeckId(deck.id)
+        setStatus('새 덱으로 저장했습니다.')
+        return
+      }
+
+      try {
+        const deck = await updateDeck(deckId, payload)
+        setDeckId(deck.id)
+        setStatus('저장했습니다.')
+      } catch (err) {
+        // 수정하려던 덱이 이미 사라졌다면(다른 기기에서 지웠거나, 오래된 링크로 들어온 경우)
+        // 실패로 끝내지 않고 새 덱으로 저장한다
+        if (!(err instanceof DeckNotFoundError)) throw err
+        const deck = await createDeck(data.set, payload)
+        setDeckId(deck.id)
+        setStatus('원래 덱을 찾을 수 없어 새 덱으로 저장했습니다.')
+      }
     } catch (err) {
       setStatus(err instanceof Error ? `저장 실패: ${err.message}` : '저장에 실패했습니다.')
     } finally {
