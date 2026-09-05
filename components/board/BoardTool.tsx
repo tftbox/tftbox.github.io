@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
+import { FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
 import clsx from 'clsx'
-import type { PlacedUnit, SetData } from '@/lib/types'
+import type { Deck, PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
 import { createDeck, DeckNotFoundError, getDeck, updateDeck } from '@/lib/decks'
 import { decodeUnits, encodeUnits } from '@/lib/deck-url'
@@ -13,6 +13,7 @@ import SynergyPanel from './SynergyPanel'
 import ChampionPool from './ChampionPool'
 import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
+import DeckPicker from './DeckPicker'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
 /** 이 시간 안에 같은 칸을 다시 두드리면 "두 번 두드림"으로 본다 */
@@ -36,6 +37,7 @@ export default function BoardTool({ data }: { data: SetData }) {
   const [pendingChampionId, setPendingChampionId] = useState<string | null>(null)
   const [pendingItemId, setPendingItemId] = useState<string | null>(null)
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null)
+  const [pickingDeck, setPickingDeck] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
@@ -319,6 +321,24 @@ export default function BoardTool({ data }: { data: SetData }) {
     }
   }
 
+  /**
+   * 링크 없이 배치툴에 들어오면 항상 빈 판이라 deckId가 없고, 그러면 "덮어쓰기"가
+   * 뜰 수가 없다. 여기서 기존 덱을 바로 골라 이어서 고칠 수 있게 한다.
+   */
+  const loadDeck = (deck: Deck) => {
+    setUnits(deck.units)
+    setName(deck.name)
+    setTags(deck.tags)
+    setMemo(deck.memo)
+    setDeckId(deck.id)
+    setPendingChampionId(null)
+    setPendingItemId(null)
+    setSelectedCell(null)
+    setPickingDeck(false)
+    router.replace(`/?deck=${deck.id}`)
+    setStatus(`"${deck.name}" 덱을 불러왔습니다.`)
+  }
+
   const pendingChampion = pendingChampionId ? index.championById.get(pendingChampionId) : null
   const pendingItem = pendingItemId ? index.itemById.get(pendingItemId) : null
 
@@ -364,6 +384,15 @@ export default function BoardTool({ data }: { data: SetData }) {
             placeholder="덱 이름 (예: 4암흑의별 리롤)"
             className="min-w-0 flex-1 rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
           />
+          <button
+            type="button"
+            onClick={() => setPickingDeck(true)}
+            title="저장해 둔 덱을 불러와 이어서 고칩니다"
+            className="flex items-center gap-1.5 rounded-lg bg-ink-850 px-3 py-2 text-sm font-semibold text-ink-200 transition-colors hover:bg-ink-800"
+          >
+            <FolderOpen size={15} />
+            불러오기
+          </button>
           <button
             type="button"
             onClick={saveAsNew}
@@ -539,6 +568,10 @@ export default function BoardTool({ data }: { data: SetData }) {
           onRemove={() => removeUnit(selectedUnit.row, selectedUnit.col)}
           onClose={() => setSelectedCell(null)}
         />
+      )}
+
+      {pickingDeck && (
+        <DeckPicker setNumber={data.set} onPick={loadDeck} onClose={() => setPickingDeck(false)} />
       )}
     </div>
   )
