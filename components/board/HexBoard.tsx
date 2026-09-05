@@ -125,8 +125,13 @@ export default function HexBoard({
                   {/*
                     성급 빠른 선택 — 마우스를 올렸을 때만 나타난다.
                     (터치에는 hover가 없어 자연히 안 뜨고, 폰에서는 시트의 큰 버튼으로 정한다)
+
+                    칸 박스 "바깥"(육각형 위 허공)에 띄우면, 마우스가 그 빈 공간을 지나는 순간
+                    바로 위 줄의 다른 칸이 그 자리를 대신 차지하고 있어 hover가 끊겨 버튼을
+                    끝내 못 누르게 된다. 그래서 이 칸 자신의 박스 안(top-0)에 겹쳐 놓아
+                    마우스 이동 경로가 끊기지 않게 한다.
                   */}
-                  <div className="pointer-events-none absolute inset-x-0 -top-[30%] z-30 flex justify-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto">
+                  <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center gap-0.5 rounded-t-[35%] bg-gradient-to-b from-black/85 to-transparent pb-3 pt-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto">
                     {[1, 2, 3].map((star) => (
                       <button
                         key={star}
