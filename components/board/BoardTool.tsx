@@ -29,6 +29,7 @@ export default function BoardTool({ data }: { data: SetData }) {
   const [name, setName] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [memo, setMemo] = useState('')
+  const memoRef = useRef<HTMLTextAreaElement>(null)
   const [deckId, setDeckId] = useState<string | null>(null)
 
   const [poolTab, setPoolTab] = useState<'champion' | 'item'>('champion')
@@ -90,6 +91,14 @@ export default function BoardTool({ data }: { data: SetData }) {
     const timer = setTimeout(() => setStatus(null), 2600)
     return () => clearTimeout(timer)
   }, [status])
+
+  // 메모 칸은 내용 길이에 맞춰 늘어난다 (스크롤 상자 안에 갇히지 않도록)
+  useEffect(() => {
+    const el = memoRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [memo])
 
   const traits = useMemo(() => computeTraits(units, index), [units, index])
   const cost = useMemo(() => deckCost(units, index), [units, index])
@@ -451,12 +460,15 @@ export default function BoardTool({ data }: { data: SetData }) {
           메모
         </label>
         <textarea
+          ref={memoRef}
           id="deck-memo"
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           rows={2}
           placeholder="이 배치에 대해 기억해 둘 것 — 언제 쓰는 덱인지, 증강체 우선순위, 주의할 상대 등"
-          className="w-full resize-none rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
+          // 내용이 길어지면 작은 스크롤 상자 안에 갇히는 대신, 칸 자체가 늘어나 전부 보이게 한다.
+          // (자동으로 높이를 맞추기 때문에 손으로 크기 조절하는 resize 핸들은 두지 않는다)
+          className="max-h-[60vh] min-h-[3.5rem] w-full resize-none overflow-y-auto rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
         />
       </section>
 
