@@ -12,12 +12,13 @@ interface Props {
   /** 지금 배치판에 올라가 있는 챔피언 id (중복 표시용) */
   placedIds: Set<string>
   pendingChampionId: string | null
-  onPick: (championId: string) => void
+  /** 끌어서 배치판에 놓기 시작할 때 */
+  onDragStart: (e: React.PointerEvent, championId: string) => void
 }
 
 const COSTS = [1, 2, 3, 4, 5]
 
-export default function ChampionPool({ champions, traits, placedIds, pendingChampionId, onPick }: Props) {
+export default function ChampionPool({ champions, traits, placedIds, pendingChampionId, onDragStart }: Props) {
   const [query, setQuery] = useState('')
   const [cost, setCost] = useState<number | null>(null)
   const [trait, setTrait] = useState<string | null>(null)
@@ -100,9 +101,12 @@ export default function ChampionPool({ champions, traits, placedIds, pendingCham
           <button
             key={c.id}
             type="button"
-            onClick={() => onPick(c.id)}
+            onPointerDown={(e) => onDragStart(e, c.id)}
+            // 길게 눌러 끌기를 쓰므로 브라우저의 확대·선택 동작은 꺼 둔다.
+            // (세로 스크롤은 그대로 살아 있다)
+            style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
             className={clsx(
-              'group relative overflow-hidden rounded-lg text-left transition-transform active:scale-95',
+              'group relative select-none overflow-hidden rounded-lg text-left transition-transform active:scale-95',
               pendingChampionId === c.id && 'ring-2 ring-accent'
             )}
           >

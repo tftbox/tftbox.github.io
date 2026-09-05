@@ -12,6 +12,7 @@ import HexBoard from './HexBoard'
 import SynergyPanel from './SynergyPanel'
 import ChampionPool from './ChampionPool'
 import UnitSheet from './UnitSheet'
+import { useDragPlacement, type Cell } from './useDragPlacement'
 
 const DRAFT_KEY = 'tft-tool:draft'
 
@@ -113,17 +114,14 @@ export default function BoardTool({ data }: { data: SetData }) {
     ? units.find((u) => u.row === selectedCell.row && u.col === selectedCell.col) ?? null
     : null
 
-  const place = useCallback(
-    (row: number, col: number) => {
-      if (!pendingChampionId) return
-      setUnits((prev) => [
-        ...prev.filter((u) => !(u.row === row && u.col === col)),
-        { id: pendingChampionId, row, col, star: 1, items: [] },
-      ])
-      setPendingChampionId(null)
-    },
-    [pendingChampionId]
-  )
+  /** 칸에 챔피언을 놓는다. 이미 있으면 그 자리를 대신한다. */
+  const placeChampion = useCallback((championId: string, cell: Cell) => {
+    setUnits((prev) => [
+      ...prev.filter((u) => !(u.row === cell.row && u.col === cell.col)),
+      { id: championId, row: cell.row, col: cell.col, star: 1, items: [] },
+    ])
+    setPendingChampionId(null)
+  }, [])
 
   const moveUnit = useCallback(
     (from: { row: number; col: number }, to: { row: number; col: number }) => {
@@ -151,6 +149,19 @@ export default function BoardTool({ data }: { data: SetData }) {
     setUnits((prev) => prev.filter((u) => !(u.row === row && u.col === col)))
     setSelectedCell(null)
   }, [])
+
+  // 목록에서 끌어다 놓기 · 배치판 안에서 자리 옮기기 · 눌러서 고르기를 함께 처리한다
+  const { state: drag, startFromPool, startFromBoard } = useDragPlacement({
+    onDropFromPool: placeChampion,
+    onMoveOnBoard: moveUnit,
+    onTapPool: (championId) => setPendingChampionId((prev) => (prev === championId ? null : championId)),
+    onTapBoard: (cell) => {
+      if (pendingChampionId) placeChampion(pendingChampionId, cell)
+      else setSelectedCell(cell)
+    },
+  })
+
+  const dragChampion = drag ? index.championById.get(drag.championId) : null
 
   const clearBoard = () => {
     if (units.length && !confirm('배치판을 비울까요?')) return
@@ -277,13 +288,16 @@ export default function BoardTool({ data }: { data: SetData }) {
             index={index}
             pendingChampionId={pendingChampionId}
             selectedCell={selectedCell}
-            onPlace={place}
-            onSelectUnit={(unit) => setSelectedCell({ row: unit.row, col: unit.col })}
-            onMoveUnit={moveUnit}
+            hoverCell={drag?.cell ?? null}
+            dragFrom={drag && drag.source.kind === 'board' ? { row: drag.source.row, col: drag.source.col } : null}
+            onUnitPointerDown={startFromBoard}
+            onEmptyCellClick={(cell) => {
+              if (pendingChampionId) placeChampion(pendingChampionId, cell)
+            }}
           />
 
           <p className="mt-1 text-center text-[10px] text-ink-400">
-            위쪽이 앞줄 · 유닛을 끌어서 자리를 옮기고, 눌러서 성급과 아이템을 정합니다
+            위쪽이 앞줄 · 아래 목록에서 챔피언을 끌어다 놓고, 배치된 유닛도 끌어서 자리를 옮깁니다
           </p>
         </div>
       </div>
@@ -293,8 +307,18 @@ export default function BoardTool({ data }: { data: SetData }) {
         traits={data.traits}
         placedIds={placedIds}
         pendingChampionId={pendingChampionId}
-        onPick={(id) => setPendingChampionId((prev) => (prev === id ? null : id))}
+        onDragStart={startFromPool}
       />
+
+      {/* 끌고 다니는 동안 손가락을 따라다니는 미리보기 */}
+      {dragChampion?.icon && (
+        <img
+          src={dragChampion.icon}
+          alt=""
+          className="hex pointer-events-none fixed z-50 h-16 w-16 -translate-x-1/2 -translate-y-1/2 object-cover opacity-90 drop-shadow-lg"
+          style={{ left: drag?.x, top: drag?.y }}
+        />
+      )}
 
       {selectedUnit && (
         <UnitSheet
