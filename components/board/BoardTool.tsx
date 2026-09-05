@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Gem, Link2, RotateCcw, Save, Swords, X } from 'lucide-react'
+import { Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
@@ -256,7 +256,33 @@ export default function BoardTool({ data }: { data: SetData }) {
     setStatus('배치판을 비웠습니다.')
   }
 
-  const save = async () => {
+  /**
+   * "저장"과 "덮어쓰기"를 항상 별도 버튼으로 둔다.
+   *
+   * 예전엔 버튼 하나가 deckId 유무에 따라 저장/덮어쓰기로 자동으로 바뀌었는데,
+   * 링크로 남의 덱을 열어 봤거나 이전에 저장했던 흔적이 deckId에 남아 있으면
+   * 사용자는 지금 새로 만드는 배치가 "새 덱"이라고 생각하고 눌러도 실제로는
+   * 그 예전 덱을 덮어써 버렸다. 두 버튼을 늘 같이 보여주면 실수로 지울 일이 없다.
+   */
+  const saveAsNew = async () => {
+    if (!units.length) return setStatus('먼저 챔피언을 배치해 주세요.')
+    const trimmed = name.trim()
+    if (!trimmed) return setStatus('덱 이름을 입력해 주세요.')
+
+    setSaving(true)
+    try {
+      const deck = await createDeck(data.set, { name: trimmed, tags, units, memo })
+      setDeckId(deck.id)
+      setStatus('새 덱으로 저장했습니다.')
+    } catch (err) {
+      setStatus(err instanceof Error ? `저장 실패: ${err.message}` : '저장에 실패했습니다.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const overwrite = async () => {
+    if (!deckId) return
     if (!units.length) return setStatus('먼저 챔피언을 배치해 주세요.')
     const trimmed = name.trim()
     if (!trimmed) return setStatus('덱 이름을 입력해 주세요.')
@@ -264,20 +290,12 @@ export default function BoardTool({ data }: { data: SetData }) {
     setSaving(true)
     try {
       const payload = { name: trimmed, tags, units, memo }
-
-      if (!deckId) {
-        const deck = await createDeck(data.set, payload)
-        setDeckId(deck.id)
-        setStatus('새 덱으로 저장했습니다.')
-        return
-      }
-
       try {
         const deck = await updateDeck(deckId, payload)
         setDeckId(deck.id)
         setStatus('저장했습니다.')
       } catch (err) {
-        // 수정하려던 덱이 이미 사라졌다면(다른 기기에서 지웠거나, 오래된 링크로 들어온 경우)
+        // 덮어쓰려던 덱이 이미 사라졌다면(다른 기기에서 지웠거나, 오래된 링크로 들어온 경우)
         // 실패로 끝내지 않고 새 덱으로 저장한다
         if (!(err instanceof DeckNotFoundError)) throw err
         const deck = await createDeck(data.set, payload)
@@ -348,13 +366,26 @@ export default function BoardTool({ data }: { data: SetData }) {
           />
           <button
             type="button"
-            onClick={save}
+            onClick={saveAsNew}
             disabled={saving}
+            title="지금 배치를 새 덱으로 저장합니다"
             className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-ink-950 transition-opacity disabled:opacity-50"
           >
-            <Save size={15} />
-            {deckId ? '덮어쓰기' : '저장'}
+            <SavePlus size={15} />
+            저장
           </button>
+          {deckId && (
+            <button
+              type="button"
+              onClick={overwrite}
+              disabled={saving}
+              title="열어 둔 덱에 지금 배치를 덮어씁니다"
+              className="flex items-center gap-1.5 rounded-lg bg-ink-800 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-ink-700 disabled:opacity-50"
+            >
+              <Save size={15} />
+              덮어쓰기
+            </button>
+          )}
           <button
             type="button"
             onClick={copyShareLink}
