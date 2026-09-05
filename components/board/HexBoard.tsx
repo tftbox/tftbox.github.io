@@ -23,10 +23,14 @@ export interface HexBoardProps {
   hoverCell: Cell | null
   /** 끌고 있는 유닛이 원래 있던 칸 */
   dragFrom: Cell | null
+  /** 지금 무엇을 끌고 있는지 — 아이템을 끄는 중이면 빈 칸은 놓을 수 없는 자리로 표시한다 */
+  dragKind: 'champion' | 'item' | null
   onUnitPointerDown: (e: React.PointerEvent, cell: Cell, championId: string) => void
   onEmptyCellClick: (cell: Cell) => void
   /** 우클릭으로 빼기 */
   onUnitContextMenu: (cell: Cell) => void
+  /** 성급 빠른 선택 (마우스 오버 시 뜨는 별) */
+  onSetStar: (cell: Cell, star: number) => void
 }
 
 export default function HexBoard({
@@ -36,9 +40,11 @@ export default function HexBoard({
   selectedCell,
   hoverCell,
   dragFrom,
+  dragKind,
   onUnitPointerDown,
   onEmptyCellClick,
   onUnitContextMenu,
+  onSetStar,
 }: HexBoardProps) {
   const unitAt = (row: number, col: number) => units.find((u) => u.row === row && u.col === col)
 
@@ -51,6 +57,8 @@ export default function HexBoard({
           const isHover = hoverCell?.row === row && hoverCell?.col === col
           const isSelected = selectedCell?.row === row && selectedCell?.col === col
           const isDragSource = dragFrom?.row === row && dragFrom?.col === col
+          // 아이템을 끄는 중에 유닛이 없는 칸 위에 있으면 놓을 수 없는 자리다
+          const isInvalidDrop = isHover && dragKind === 'item' && !unit
 
           return (
             <div
@@ -69,7 +77,7 @@ export default function HexBoard({
                 e.preventDefault()
                 onUnitContextMenu({ row, col })
               }}
-              className="absolute"
+              className="group absolute"
               style={{
                 width: `${HEX_W}%`,
                 height: `${HEX_H}%`,
@@ -85,7 +93,7 @@ export default function HexBoard({
                 className={clsx(
                   'hex relative h-full w-full transition-colors',
                   unit ? 'bg-ink-700' : 'bg-ink-850',
-                  !unit && (pendingChampionId || dragFrom) && 'ring-1 ring-accent/40',
+                  !unit && dragKind !== 'item' && (pendingChampionId || dragFrom) && 'ring-1 ring-accent/40',
                   isDragSource && 'opacity-25'
                 )}
                 style={champ ? { backgroundColor: COST_COLOR[champ.cost] ?? '#6b7280' } : undefined}
@@ -98,8 +106,15 @@ export default function HexBoard({
                   </div>
                 )}
 
-                {/* 지금 놓이게 될 칸을 또렷하게 표시한다 */}
-                {isHover && <div className="hex pointer-events-none absolute inset-0 bg-accent/45 ring-2 ring-accent" />}
+                {/* 지금 놓이게 될 칸을 또렷하게 표시한다. 아이템을 빈 칸 위로 끌고 있으면 안 된다는 표시로 바꾼다 */}
+                {isHover && (
+                  <div
+                    className={clsx(
+                      'hex pointer-events-none absolute inset-0 ring-2',
+                      isInvalidDrop ? 'bg-red-500/25 ring-red-500/70' : 'bg-accent/45 ring-accent'
+                    )}
+                  />
+                )}
                 {isSelected && !isHover && (
                   <div className="hex pointer-events-none absolute inset-0 ring-2 ring-white/80" />
                 )}
@@ -107,6 +122,31 @@ export default function HexBoard({
 
               {unit && champ && (
                 <>
+                  {/*
+                    성급 빠른 선택 — 마우스를 올렸을 때만 나타난다.
+                    (터치에는 hover가 없어 자연히 안 뜨고, 폰에서는 시트의 큰 버튼으로 정한다)
+                  */}
+                  <div className="pointer-events-none absolute inset-x-0 -top-[30%] z-30 flex justify-center gap-0.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto">
+                    {[1, 2, 3].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onSetStar({ row, col }, star)
+                        }}
+                        title={`${star}성으로`}
+                        className={clsx(
+                          'rounded bg-ink-950/95 px-1.5 py-0.5 text-xs font-bold leading-none ring-1 ring-ink-700 transition-colors',
+                          unit.star >= star ? 'text-amber-300' : 'text-ink-500 hover:text-amber-200'
+                        )}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+
                   {/* 성급 */}
                   {unit.star > 1 && (
                     <div className="pointer-events-none absolute left-1/2 top-[2%] -translate-x-1/2 whitespace-nowrap text-[9px] leading-none text-amber-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-xs">

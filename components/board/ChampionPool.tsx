@@ -14,11 +14,13 @@ interface Props {
   pendingChampionId: string | null
   /** 끌어서 배치판에 놓기 시작할 때 */
   onDragStart: (e: React.PointerEvent, championId: string) => void
+  /** 검색창 옆에 얹을 내용 (챔피언/아이템 전환 버튼). 모바일에서 세로 공간을 아끼려고 별도 줄을 만들지 않는다 */
+  headerExtra?: React.ReactNode
 }
 
 const COSTS = [1, 2, 3, 4, 5]
 
-export default function ChampionPool({ champions, traits, placedIds, pendingChampionId, onDragStart }: Props) {
+export default function ChampionPool({ champions, traits, placedIds, pendingChampionId, onDragStart, headerExtra }: Props) {
   const [query, setQuery] = useState('')
   const [cost, setCost] = useState<number | null>(null)
   const [trait, setTrait] = useState<string | null>(null)
@@ -44,24 +46,27 @@ export default function ChampionPool({ champions, traits, placedIds, pendingCham
   return (
     <section className="rounded-xl border border-ink-800 bg-ink-900">
       <div className="sticky top-12 z-20 space-y-2 rounded-t-xl border-b border-ink-800 bg-ink-900 p-3 md:top-14">
-        <div className="relative">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="챔피언 · 특성 검색"
-            className="w-full rounded-lg bg-ink-850 py-2 pl-9 pr-9 text-sm text-white placeholder:text-ink-400"
-          />
-          {hasFilter && (
-            <button
-              type="button"
-              onClick={resetFilters}
-              aria-label="검색 조건 지우기"
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink-400 hover:text-white"
-            >
-              <X size={15} />
-            </button>
-          )}
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="챔피언 · 특성 검색"
+              className="w-full rounded-lg bg-ink-850 py-2 pl-9 pr-9 text-sm text-white placeholder:text-ink-400"
+            />
+            {hasFilter && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                aria-label="검색 조건 지우기"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink-400 hover:text-white"
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+          {headerExtra}
         </div>
 
         <div className="thin-scroll -mx-1 flex gap-1 overflow-x-auto px-1 pb-1">
@@ -96,7 +101,11 @@ export default function ChampionPool({ champions, traits, placedIds, pendingCham
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-1.5 p-3 sm:grid-cols-6 lg:grid-cols-5 xl:grid-cols-6">
+      {/*
+        고정된 열 개수 대신 칸의 최소 너비를 정해 두면, 화면 폭에 맞춰
+        열 개수가 알아서 늘고 줄어 타일이 항상 일정한 크기로 유지된다.
+      */}
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-1.5 p-3">
         {filtered.map((c) => (
           <button
             key={c.id}

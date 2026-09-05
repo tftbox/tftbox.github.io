@@ -6,6 +6,7 @@ import clsx from 'clsx'
 import type { Item, PlacedUnit } from '@/lib/types'
 import { COST_COLOR, type SetIndex } from '@/lib/synergy'
 import Sheet from '@/components/Sheet'
+import { ITEM_TABS } from './itemTabs'
 
 interface Props {
   unit: PlacedUnit
@@ -159,14 +160,6 @@ export default function UnitSheet({ unit, index, onChange, onRemove, onClose }: 
 
 // ---------------------------------------------------------------------------
 
-const TABS = [
-  { key: 'combined', label: '조합' },
-  { key: 'radiant', label: '찬란한' },
-  { key: 'artifacts', label: '유물' },
-  { key: 'emblems', label: '상징' },
-  { key: 'components', label: '기본' },
-] as const
-
 function ItemPicker({
   index,
   disabledIds,
@@ -178,11 +171,11 @@ function ItemPicker({
   onPick: (itemId: string) => void
   onClose: () => void
 }) {
-  const [tab, setTab] = useState<(typeof TABS)[number]['key']>('combined')
+  const [tab, setTab] = useState<(typeof ITEM_TABS)[number]['key']>('combined')
   const [query, setQuery] = useState('')
 
   // 찬란한 아이템처럼 시즌에 따라 아예 없는 분류는 탭을 띄우지 않는다
-  const tabs = TABS.filter((t) => index.data.items[t.key].length > 0)
+  const tabs = ITEM_TABS.filter((t) => index.data.items[t.key].length > 0)
 
   const q = query.trim().toLowerCase()
   const list = index.data.items[tab].filter((i) => !q || i.name.toLowerCase().includes(q))

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Link2, RotateCcw, Save, X } from 'lucide-react'
+import { Gem, Link2, RotateCcw, Save, Swords, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
@@ -11,6 +11,7 @@ import { decodeUnits, encodeUnits } from '@/lib/deck-url'
 import HexBoard from './HexBoard'
 import SynergyPanel from './SynergyPanel'
 import ChampionPool from './ChampionPool'
+import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
@@ -18,6 +19,8 @@ const DRAFT_KEY = 'tft-tool:draft'
 
 /** 이 시간 안에 같은 칸을 다시 두드리면 "두 번 두드림"으로 본다 */
 const DOUBLE_TAP_MS = 400
+
+const MAX_ITEMS = 3
 
 interface Draft {
   units: PlacedUnit[]
@@ -36,7 +39,9 @@ export default function BoardTool({ data }: { data: SetData }) {
   const [tags, setTags] = useState<string[]>([])
   const [deckId, setDeckId] = useState<string | null>(null)
 
+  const [poolTab, setPoolTab] = useState<'champion' | 'item'>('champion')
   const [pendingChampionId, setPendingChampionId] = useState<string | null>(null)
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null)
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -153,17 +158,55 @@ export default function BoardTool({ data }: { data: SetData }) {
     setSelectedCell(null)
   }, [])
 
+  /** 유닛의 성급을 바로 정한다 (배치판 위에서 마우스 오버로 뜨는 별 선택) */
+  const setStar = useCallback((cell: Cell, star: number) => {
+    setUnits((prev) => prev.map((u) => (u.row === cell.row && u.col === cell.col ? { ...u, star } : u)))
+  }, [])
+
+  /** 칸 위의 유닛에게 아이템을 낀다. 빈 칸이거나 이미 가득 찼거나 중복이면 안내만 하고 끝낸다. */
+  const attachItem = useCallback(
+    (itemId: string, cell: Cell) => {
+      const unit = units.find((u) => u.row === cell.row && u.col === cell.col)
+      if (!unit) return setStatus('빈 칸에는 아이템을 낄 수 없습니다. 유닛 위에 놓아 주세요.')
+      if (unit.items.length >= MAX_ITEMS) return setStatus('아이템은 최대 3개까지 낄 수 있습니다.')
+      if (unit.items.includes(itemId)) return setStatus('이미 장착한 아이템입니다.')
+
+      setUnits((prev) =>
+        prev.map((u) => (u.row === cell.row && u.col === cell.col ? { ...u, items: [...u.items, itemId] } : u))
+      )
+      setPendingItemId(null)
+    },
+    [units]
+  )
+
   // 손가락으로 같은 칸을 연달아 두 번 두드리면 빼기 위한 기록
   const lastTap = useRef<{ cell: Cell; at: number } | null>(null)
 
-  // 목록에서 끌어다 놓기 · 배치판 안에서 자리 옮기기 · 눌러서 고르기를 함께 처리한다
-  const { state: drag, startFromPool, startFromBoard } = useDragPlacement({
-    onDropFromPool: placeChampion,
-    onMoveOnBoard: moveUnit,
-    onTapPool: (championId) => setPendingChampionId((prev) => (prev === championId ? null : championId)),
-    onTapBoard: (cell, pointerType) => {
+  // 챔피언·아이템을 끌어다 놓기 · 배치판 안에서 자리 옮기기 · 눌러서 고르기를 함께 처리한다
+  const {
+    state: drag,
+    startFromPoolChampion,
+    startFromPoolItem,
+    startFromBoardUnit,
+  } = useDragPlacement({
+    onDropChampion: placeChampion,
+    onDropItem: attachItem,
+    onMoveUnit: moveUnit,
+    onTapPoolChampion: (championId) => {
+      setPendingItemId(null)
+      setPendingChampionId((prev) => (prev === championId ? null : championId))
+    },
+    onTapPoolItem: (itemId) => {
+      setPendingChampionId(null)
+      setPendingItemId((prev) => (prev === itemId ? null : itemId))
+    },
+    onTapBoardUnit: (cell, pointerType) => {
       if (pendingChampionId) {
         placeChampion(pendingChampionId, cell)
+        return
+      }
+      if (pendingItemId) {
+        attachItem(pendingItemId, cell)
         return
       }
       if (pointerType !== 'mouse') lastTap.current = { cell, at: Date.now() }
@@ -201,7 +244,14 @@ export default function BoardTool({ data }: { data: SetData }) {
     return () => window.removeEventListener('pointerdown', onPointerDown, true)
   }, [removeUnit])
 
-  const dragChampion = drag ? index.championById.get(drag.championId) : null
+  // 드래그 미리보기와 배치판 강조 표시에 쓸, 지금 끌고 있는 대상
+  const dragChampionId =
+    drag && (drag.source.kind === 'poolChampion' || drag.source.kind === 'boardUnit') ? drag.source.championId : null
+  const dragItemId = drag && drag.source.kind === 'poolItem' ? drag.source.itemId : null
+  const dragChampion = dragChampionId ? index.championById.get(dragChampionId) : null
+  const dragItem = dragItemId ? index.itemById.get(dragItemId) : null
+  const dragFrom = drag && drag.source.kind === 'boardUnit' ? { row: drag.source.row, col: drag.source.col } : null
+  const dragKind: 'champion' | 'item' | null = dragChampionId ? 'champion' : dragItemId ? 'item' : null
 
   const clearBoard = () => {
     if (units.length && !confirm('배치판을 비울까요?')) return
@@ -210,6 +260,7 @@ export default function BoardTool({ data }: { data: SetData }) {
     setTags([])
     setDeckId(null)
     setPendingChampionId(null)
+    setPendingItemId(null)
     router.replace('/')
     setStatus('배치판을 비웠습니다.')
   }
@@ -243,6 +294,38 @@ export default function BoardTool({ data }: { data: SetData }) {
   }
 
   const pendingChampion = pendingChampionId ? index.championById.get(pendingChampionId) : null
+  const pendingItem = pendingItemId ? index.itemById.get(pendingItemId) : null
+
+  // 챔피언/아이템 목록 전환 버튼. 검색창 옆에 얹어 별도 줄을 만들지 않는다
+  // (모바일에서는 이 한 줄이 늘어나는 것만으로도 목록 첫 줄이 하단 탭바 뒤로 넘어갈 수 있다)
+  const poolToggle = (
+    <div className="flex shrink-0 gap-0.5 rounded-lg bg-ink-850 p-0.5">
+      <button
+        type="button"
+        onClick={() => setPoolTab('champion')}
+        aria-label="챔피언 목록"
+        title="챔피언"
+        className={clsx(
+          'rounded-md p-1.5 transition-colors',
+          poolTab === 'champion' ? 'bg-ink-700 text-white' : 'text-ink-400 hover:text-ink-200'
+        )}
+      >
+        <Swords size={16} />
+      </button>
+      <button
+        type="button"
+        onClick={() => setPoolTab('item')}
+        aria-label="아이템 목록"
+        title="아이템"
+        className={clsx(
+          'rounded-md p-1.5 transition-colors',
+          poolTab === 'item' ? 'bg-ink-700 text-white' : 'text-ink-400 hover:text-ink-200'
+        )}
+      >
+        <Gem size={16} />
+      </button>
+    </div>
+  )
 
   return (
     <div className="space-y-3">
@@ -305,16 +388,25 @@ export default function BoardTool({ data }: { data: SetData }) {
         </div>
 
         <div className="order-1 rounded-xl border border-ink-800 bg-ink-900 p-3 lg:order-2">
-          {pendingChampion && (
+          {(pendingChampion || pendingItem) && (
             <div className="mb-2 flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
-              {pendingChampion.icon && (
-                <img src={pendingChampion.icon} alt="" className="h-6 w-6 rounded object-cover" />
+              {(pendingChampion?.icon || pendingItem?.icon) && (
+                <img
+                  src={pendingChampion?.icon ?? pendingItem?.icon ?? ''}
+                  alt=""
+                  className="h-6 w-6 rounded object-cover"
+                />
               )}
-              <span className="font-semibold">{pendingChampion.name}</span>
-              <span className="text-accent/70">놓을 칸을 누르세요</span>
+              <span className="font-semibold">{pendingChampion?.name ?? pendingItem?.name}</span>
+              <span className="text-accent/70">
+                {pendingChampion ? '놓을 칸을 누르세요' : '장착할 유닛을 누르세요'}
+              </span>
               <button
                 type="button"
-                onClick={() => setPendingChampionId(null)}
+                onClick={() => {
+                  setPendingChampionId(null)
+                  setPendingItemId(null)
+                }}
                 aria-label="선택 취소"
                 className="ml-auto rounded p-0.5 hover:bg-accent/20"
               >
@@ -329,10 +421,13 @@ export default function BoardTool({ data }: { data: SetData }) {
             pendingChampionId={pendingChampionId}
             selectedCell={selectedCell}
             hoverCell={drag?.cell ?? null}
-            dragFrom={drag && drag.source.kind === 'board' ? { row: drag.source.row, col: drag.source.col } : null}
-            onUnitPointerDown={startFromBoard}
+            dragFrom={dragFrom}
+            dragKind={dragKind}
+            onSetStar={setStar}
+            onUnitPointerDown={startFromBoardUnit}
             onEmptyCellClick={(cell) => {
               if (pendingChampionId) placeChampion(pendingChampionId, cell)
+              else if (pendingItemId) setStatus('빈 칸에는 아이템을 낄 수 없습니다. 유닛을 누르세요.')
             }}
             onUnitContextMenu={(cell) => {
               removeUnit(cell.row, cell.col)
@@ -341,7 +436,9 @@ export default function BoardTool({ data }: { data: SetData }) {
           />
 
           <p className="mt-1 text-center text-[10px] leading-relaxed text-ink-400">
-            위쪽이 앞줄 · 아래 목록에서 챔피언을 끌어다 놓고, 배치된 유닛도 끌어서 자리를 옮깁니다
+            위쪽이 앞줄 · 아래 목록에서 챔피언과 아이템을 끌어다 놓습니다
+            <br />
+            성급은 유닛에 마우스를 올려 별로 바로 정할 수 있습니다
             <br />
             <span className="hidden md:inline">빼기는 유닛에서 오른쪽 클릭</span>
             <span className="md:hidden">빼기는 유닛을 두 번 두드리기</span>
@@ -349,20 +446,28 @@ export default function BoardTool({ data }: { data: SetData }) {
         </div>
       </div>
 
-      <ChampionPool
-        champions={data.champions}
-        traits={data.traits}
-        placedIds={placedIds}
-        pendingChampionId={pendingChampionId}
-        onDragStart={startFromPool}
-      />
+      {poolTab === 'champion' ? (
+        <ChampionPool
+          champions={data.champions}
+          traits={data.traits}
+          placedIds={placedIds}
+          pendingChampionId={pendingChampionId}
+          onDragStart={startFromPoolChampion}
+          headerExtra={poolToggle}
+        />
+      ) : (
+        <ItemPool data={data} pendingItemId={pendingItemId} onDragStart={startFromPoolItem} headerExtra={poolToggle} />
+      )}
 
       {/* 끌고 다니는 동안 손가락을 따라다니는 미리보기 */}
-      {dragChampion?.icon && (
+      {(dragChampion?.icon || dragItem?.icon) && (
         <img
-          src={dragChampion.icon}
+          src={dragChampion?.icon ?? dragItem?.icon ?? ''}
           alt=""
-          className="hex pointer-events-none fixed z-50 h-16 w-16 -translate-x-1/2 -translate-y-1/2 object-cover opacity-90 drop-shadow-lg"
+          className={clsx(
+            'pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-1/2 object-cover opacity-90 drop-shadow-lg',
+            dragChampion ? 'hex h-16 w-16 object-cover' : 'h-10 w-10 rounded bg-ink-900 object-contain p-1'
+          )}
           style={{ left: drag?.x, top: drag?.y }}
         />
       )}
