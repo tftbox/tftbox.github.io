@@ -244,7 +244,7 @@ export default function BoardTool({ data }: { data: SetData }) {
   const dragKind: 'champion' | 'item' | null = dragChampionId ? 'champion' : dragItemId ? 'item' : null
 
   const clearBoard = () => {
-    if (units.length && !confirm('배치판을 비울까요?')) return
+    if (units.length && !confirm('배치판을 비울까요? 저장된 덱에는 영향이 없습니다.')) return
     setUnits([])
     setName('')
     setTags([])
@@ -359,6 +359,7 @@ export default function BoardTool({ data }: { data: SetData }) {
             type="button"
             onClick={copyShareLink}
             aria-label="공유 링크 복사"
+            title="공유 링크 복사"
             className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
           >
             <Link2 size={17} />
@@ -366,10 +367,11 @@ export default function BoardTool({ data }: { data: SetData }) {
           <button
             type="button"
             onClick={clearBoard}
-            aria-label="배치판 비우기"
-            className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
+            title="배치판·이름·태그·메모를 한 번에 비웁니다 (저장된 덱은 그대로 남습니다)"
+            className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/20"
           >
-            <RotateCcw size={17} />
+            <RotateCcw size={15} />
+            초기화
           </button>
         </div>
 
