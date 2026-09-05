@@ -39,6 +39,7 @@ interface Gesture {
   source: DragSource
   championId: string
   pointerId: number
+  pointerType: string
   startX: number
   startY: number
   /** 드래그로 넘어갈 수 있는 상태인지 (목록에서는 길게 누른 뒤에 켜진다) */
@@ -54,7 +55,8 @@ interface Options {
   onDropFromPool: (championId: string, cell: Cell) => void
   onMoveOnBoard: (from: Cell, to: Cell) => void
   onTapPool: (championId: string) => void
-  onTapBoard: (cell: Cell) => void
+  /** pointerType은 손가락으로 두드린 것과 마우스로 누른 것을 가리는 데 쓴다 */
+  onTapBoard: (cell: Cell, pointerType: string) => void
 }
 
 /** 화면 좌표 아래에 있는 배치판 칸을 찾는다 */
@@ -90,6 +92,7 @@ export function useDragPlacement({ onDropFromPool, onMoveOnBoard, onTapPool, onT
       source,
       championId,
       pointerId: e.pointerId,
+      pointerType: e.pointerType,
       startX: e.clientX,
       startY: e.clientY,
       armed: !needsLongPress,
@@ -113,12 +116,17 @@ export function useDragPlacement({ onDropFromPool, onMoveOnBoard, onTapPool, onT
   }, [])
 
   const startFromPool = useCallback(
-    (e: React.PointerEvent, championId: string) => begin({ kind: 'pool', championId }, championId, e),
+    (e: React.PointerEvent, championId: string) => {
+      if (e.button !== 0) return
+      begin({ kind: 'pool', championId }, championId, e)
+    },
     [begin]
   )
 
   const startFromBoard = useCallback(
     (e: React.PointerEvent, cell: Cell, championId: string) => {
+      // 오른쪽 버튼은 빼기용이라 드래그로 잡지 않는다
+      if (e.button !== 0) return
       // 배치판에서는 브라우저가 스크롤로 가져가지 못하게 막는다
       e.preventDefault()
       begin({ kind: 'board', ...cell }, championId, e)
@@ -160,7 +168,7 @@ export function useDragPlacement({ onDropFromPool, onMoveOnBoard, onTapPool, onT
         }
       } else if (!g.moved && !g.active) {
         // 끌지 않고 그냥 눌렀다 뗀 경우
-        if (g.source.kind === 'board') handlers.current.onTapBoard({ row: g.source.row, col: g.source.col })
+        if (g.source.kind === 'board') handlers.current.onTapBoard({ row: g.source.row, col: g.source.col }, g.pointerType)
         else handlers.current.onTapPool(g.source.championId)
       }
 

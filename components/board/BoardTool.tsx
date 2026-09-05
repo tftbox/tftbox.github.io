@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Link2, RotateCcw, Save, X } from 'lucide-react'
 import clsx from 'clsx'
@@ -15,6 +15,9 @@ import UnitSheet from './UnitSheet'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
 const DRAFT_KEY = 'tft-tool:draft'
+
+/** 이 시간 안에 같은 칸을 다시 두드리면 "두 번 두드림"으로 본다 */
+const DOUBLE_TAP_MS = 400
 
 interface Draft {
   units: PlacedUnit[]
@@ -150,16 +153,53 @@ export default function BoardTool({ data }: { data: SetData }) {
     setSelectedCell(null)
   }, [])
 
+  // 손가락으로 같은 칸을 연달아 두 번 두드리면 빼기 위한 기록
+  const lastTap = useRef<{ cell: Cell; at: number } | null>(null)
+
   // 목록에서 끌어다 놓기 · 배치판 안에서 자리 옮기기 · 눌러서 고르기를 함께 처리한다
   const { state: drag, startFromPool, startFromBoard } = useDragPlacement({
     onDropFromPool: placeChampion,
     onMoveOnBoard: moveUnit,
     onTapPool: (championId) => setPendingChampionId((prev) => (prev === championId ? null : championId)),
-    onTapBoard: (cell) => {
-      if (pendingChampionId) placeChampion(pendingChampionId, cell)
-      else setSelectedCell(cell)
+    onTapBoard: (cell, pointerType) => {
+      if (pendingChampionId) {
+        placeChampion(pendingChampionId, cell)
+        return
+      }
+      if (pointerType !== 'mouse') lastTap.current = { cell, at: Date.now() }
+      setSelectedCell(cell)
     },
   })
+
+  /**
+   * 폰에서 두 번 두드려 빼기.
+   *
+   * 첫 번째 두드림에 설정 시트가 바로 열리기 때문에, 두 번째 두드림은 칸이 아니라
+   * 시트 배경 위에 떨어진다. 그래서 눌린 좌표가 방금 두드린 칸 위인지를 직접 따져 본다.
+   */
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') return
+
+      const last = lastTap.current
+      if (!last || Date.now() - last.at > DOUBLE_TAP_MS) return
+
+      const el = document.querySelector(`[data-cell="${last.cell.row},${last.cell.col}"]`)
+      if (!el) return
+
+      const r = el.getBoundingClientRect()
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom
+      if (!inside) return
+
+      lastTap.current = null
+      e.stopPropagation()
+      removeUnit(last.cell.row, last.cell.col)
+      setStatus('유닛을 뺐습니다.')
+    }
+
+    window.addEventListener('pointerdown', onPointerDown, true)
+    return () => window.removeEventListener('pointerdown', onPointerDown, true)
+  }, [removeUnit])
 
   const dragChampion = drag ? index.championById.get(drag.championId) : null
 
@@ -294,10 +334,17 @@ export default function BoardTool({ data }: { data: SetData }) {
             onEmptyCellClick={(cell) => {
               if (pendingChampionId) placeChampion(pendingChampionId, cell)
             }}
+            onUnitContextMenu={(cell) => {
+              removeUnit(cell.row, cell.col)
+              setStatus('유닛을 뺐습니다.')
+            }}
           />
 
-          <p className="mt-1 text-center text-[10px] text-ink-400">
+          <p className="mt-1 text-center text-[10px] leading-relaxed text-ink-400">
             위쪽이 앞줄 · 아래 목록에서 챔피언을 끌어다 놓고, 배치된 유닛도 끌어서 자리를 옮깁니다
+            <br />
+            <span className="hidden md:inline">빼기는 유닛에서 오른쪽 클릭</span>
+            <span className="md:hidden">빼기는 유닛을 두 번 두드리기</span>
           </p>
         </div>
       </div>

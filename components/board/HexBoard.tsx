@@ -25,6 +25,8 @@ export interface HexBoardProps {
   dragFrom: Cell | null
   onUnitPointerDown: (e: React.PointerEvent, cell: Cell, championId: string) => void
   onEmptyCellClick: (cell: Cell) => void
+  /** 우클릭으로 빼기 */
+  onUnitContextMenu: (cell: Cell) => void
 }
 
 export default function HexBoard({
@@ -36,6 +38,7 @@ export default function HexBoard({
   dragFrom,
   onUnitPointerDown,
   onEmptyCellClick,
+  onUnitContextMenu,
 }: HexBoardProps) {
   const unitAt = (row: number, col: number) => units.find((u) => u.row === row && u.col === col)
 
@@ -59,6 +62,12 @@ export default function HexBoard({
               onClick={() => {
                 // 유닛이 있는 칸은 pointerup 쪽에서 처리한다
                 if (!unit) onEmptyCellClick({ row, col })
+              }}
+              onContextMenu={(e) => {
+                if (!unit) return
+                // 브라우저 기본 메뉴 대신 바로 빼 준다
+                e.preventDefault()
+                onUnitContextMenu({ row, col })
               }}
               className="absolute"
               style={{
