@@ -32,11 +32,30 @@ export default function DeckLibrary({ data }: { data: SetData }) {
 
       const traits = computeTraits(deck.units, index).filter((t) => t.current)
 
-      const haystack = [deck.name, deck.memo, ...deck.tags, ...champions.map((c) => c.name), ...traits.map((t) => t.trait.name)]
+      // 유물·상징은 종류가 많지 않아, 어떤 덱에 뭘 썼는지 이름으로 바로 찾고 싶을 때가 많다.
+      // 같은 아이템을 여러 유닛이 껴도 한 번만 세어 목록에 남긴다.
+      const seenItemIds = new Set<string>()
+      const items = deck.units
+        .flatMap((u) => u.items)
+        .map((id) => index.itemById.get(id))
+        .filter((i): i is NonNullable<typeof i> => {
+          if (!i || seenItemIds.has(i.id)) return false
+          seenItemIds.add(i.id)
+          return true
+        })
+
+      const haystack = [
+        deck.name,
+        deck.memo,
+        ...deck.tags,
+        ...champions.map((c) => c.name),
+        ...traits.map((t) => t.trait.name),
+        ...items.map((i) => i.name),
+      ]
         .join(' ')
         .toLowerCase()
 
-      return { deck, champions, traits, haystack }
+      return { deck, champions, traits, items, haystack }
     })
   }, [decks, index])
 
@@ -79,7 +98,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="덱 이름 · 챔피언 · 특성 · 메모 검색"
+            placeholder="덱 이름 · 챔피언 · 특성 · 유물 · 상징 · 메모 검색"
             className="w-full rounded-lg bg-ink-850 py-2 pl-9 pr-3 text-sm text-white placeholder:text-ink-400"
           />
         </div>
@@ -125,7 +144,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
       )}
 
       <ul className="grid gap-2 md:grid-cols-2">
-        {filtered.map(({ deck, champions, traits }) => (
+        {filtered.map(({ deck, champions, traits, items }) => (
           <li key={deck.id} className="rounded-xl border border-ink-800 bg-ink-900 p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -172,6 +191,21 @@ export default function DeckLibrary({ data }: { data: SetData }) {
                 />
               ))}
             </div>
+
+            {/* 유물 · 상징 */}
+            {items.length > 0 && (
+              <div className="thin-scroll mt-2 flex gap-1 overflow-x-auto pb-1">
+                {items.map((item) => (
+                  <img
+                    key={item.id}
+                    src={item.icon ?? ''}
+                    alt={item.name}
+                    title={item.name}
+                    className="h-7 w-7 shrink-0 rounded bg-ink-850 object-contain p-0.5"
+                  />
+                ))}
+              </div>
+            )}
 
             {deck.tags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
