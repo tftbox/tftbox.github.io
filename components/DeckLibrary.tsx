@@ -200,7 +200,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
                     key={item.id}
                     src={item.icon ?? ''}
                     alt={item.name}
-                    title={item.name}
+                    title={item.from.length ? `${item.name} (${item.from.map((f) => f.name).join(' + ')})` : item.name}
                     className="h-7 w-7 shrink-0 rounded bg-ink-850 object-contain p-0.5"
                   />
                 ))}

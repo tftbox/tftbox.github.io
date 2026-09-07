@@ -459,29 +459,44 @@ export default function BoardTool({ data }: { data: SetData }) {
 
         <div className="order-1 rounded-xl border border-ink-800 bg-ink-900 p-3 lg:order-2">
           {(pendingChampion || pendingItem) && (
-            <div className="mb-2 flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
-              {(pendingChampion?.icon || pendingItem?.icon) && (
-                <img
-                  src={pendingChampion?.icon ?? pendingItem?.icon ?? ''}
-                  alt=""
-                  className="h-6 w-6 rounded object-cover"
-                />
+            <div className="mb-2 rounded-lg bg-accent/10 px-3 py-2 text-xs text-accent">
+              <div className="flex items-center gap-2">
+                {(pendingChampion?.icon || pendingItem?.icon) && (
+                  <img
+                    src={pendingChampion?.icon ?? pendingItem?.icon ?? ''}
+                    alt=""
+                    className="h-6 w-6 rounded object-cover"
+                  />
+                )}
+                <span className="font-semibold">{pendingChampion?.name ?? pendingItem?.name}</span>
+                <span className="text-accent/70">
+                  {pendingChampion ? '놓을 칸을 누르세요' : '장착할 유닛을 누르세요'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingChampionId(null)
+                    setPendingItemId(null)
+                  }}
+                  aria-label="선택 취소"
+                  className="ml-auto rounded p-0.5 hover:bg-accent/20"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* 조합 아이템이면 무엇 + 무엇으로 만들어지는지 재료를 보여준다 */}
+              {pendingItem && pendingItem.from.length > 0 && (
+                <div className="mt-1.5 flex items-center gap-1.5 border-t border-accent/20 pt-1.5">
+                  {pendingItem.from.map((f, i) => (
+                    <span key={`${f.id}-${i}`} className="flex items-center gap-1.5">
+                      {i > 0 && <span className="text-accent/50">+</span>}
+                      {f.icon && <img src={f.icon} alt="" className="h-5 w-5 rounded" />}
+                      <span className="text-accent/80">{f.name}</span>
+                    </span>
+                  ))}
+                </div>
               )}
-              <span className="font-semibold">{pendingChampion?.name ?? pendingItem?.name}</span>
-              <span className="text-accent/70">
-                {pendingChampion ? '놓을 칸을 누르세요' : '장착할 유닛을 누르세요'}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setPendingChampionId(null)
-                  setPendingItemId(null)
-                }}
-                aria-label="선택 취소"
-                className="ml-auto rounded p-0.5 hover:bg-accent/20"
-              >
-                <X size={14} />
-              </button>
             </div>
           )}
 

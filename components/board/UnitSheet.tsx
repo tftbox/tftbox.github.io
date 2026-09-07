@@ -218,13 +218,14 @@ function ItemPicker({
         {list.map((item) => {
           // 유니크 아이템만 중복 장착을 막는다. 일반 아이템은 실제 게임처럼 여러 개 껴도 된다.
           const blocked = item.unique && disabledIds.includes(item.id)
+          const recipe = item.from.length ? ` (${item.from.map((f) => f.name).join(' + ')})` : ''
           return (
             <button
               key={item.id}
               type="button"
               disabled={blocked}
               onClick={() => onPick(item.id)}
-              title={blocked ? `${item.name} (유니크 · 이미 장착함)` : item.name}
+              title={blocked ? `${item.name} (유니크 · 이미 장착함)` : `${item.name}${recipe}`}
               className={clsx(
                 'aspect-square rounded-lg bg-ink-850 p-1 transition-transform active:scale-95',
                 blocked && 'opacity-30'

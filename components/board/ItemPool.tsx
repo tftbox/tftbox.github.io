@@ -76,7 +76,7 @@ export default function ItemPool({ data, pendingItemId, onDragStart, headerExtra
             // 길게 눌러 끌기를 쓰므로 브라우저의 확대·선택 동작은 꺼 둔다.
             // (세로 스크롤은 그대로 살아 있다)
             style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
-            title={item.name}
+            title={item.from.length ? `${item.name} (${item.from.map((f) => f.name).join(' + ')})` : item.name}
             className={clsx(
               'aspect-square select-none overflow-hidden rounded-lg bg-ink-850 p-1 transition-transform active:scale-95',
               pendingItemId === item.id && 'ring-2 ring-accent'
