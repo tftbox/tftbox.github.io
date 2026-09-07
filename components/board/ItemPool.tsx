@@ -5,6 +5,7 @@ import { Search, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { SetData } from '@/lib/types'
 import { ITEM_TABS } from './itemTabs'
+import ItemRecipeTooltip from './ItemRecipeTooltip'
 
 interface Props {
   data: SetData
@@ -76,13 +77,26 @@ export default function ItemPool({ data, pendingItemId, onDragStart, headerExtra
             // 길게 눌러 끌기를 쓰므로 브라우저의 확대·선택 동작은 꺼 둔다.
             // (세로 스크롤은 그대로 살아 있다)
             style={{ touchAction: 'manipulation', WebkitTouchCallout: 'none' }}
-            title={item.from.length ? `${item.name} (${item.from.map((f) => f.name).join(' + ')})` : item.name}
+            title={item.name}
             className={clsx(
-              'aspect-square select-none overflow-hidden rounded-lg bg-ink-850 p-1 transition-transform active:scale-95',
+              'group/tip relative aspect-square select-none transition-transform active:scale-95',
               pendingItemId === item.id && 'ring-2 ring-accent'
             )}
           >
-            {item.icon && <img src={item.icon} alt={item.name} className="h-full w-full object-contain" draggable={false} />}
+            <span className="block h-full w-full overflow-hidden rounded-lg bg-ink-850 p-1">
+              {item.icon && (
+                <img src={item.icon} alt={item.name} className="h-full w-full object-contain" draggable={false} />
+              )}
+            </span>
+
+            {/* 마우스를 올리면 재료 아이콘·이름이 뜬다. 브라우저 기본 title 툴팁은
+                한글 텍스트만 나와 가독성이 떨어져서, 아이콘이 들어간 것을 직접 그린다. */}
+            {item.from.length > 0 && (
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 hidden w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-ink-950 px-2 py-1.5 text-[11px] text-white shadow-lg ring-1 ring-ink-700 group-hover/tip:block">
+                <p className="mb-1 whitespace-nowrap font-semibold">{item.name}</p>
+                <ItemRecipeTooltip item={item} />
+              </div>
+            )}
           </button>
         ))}
 

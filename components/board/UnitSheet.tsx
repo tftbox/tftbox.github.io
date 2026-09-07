@@ -7,6 +7,7 @@ import type { Item, PlacedUnit } from '@/lib/types'
 import { COST_COLOR, type SetIndex } from '@/lib/synergy'
 import Sheet from '@/components/Sheet'
 import { ITEM_TABS } from './itemTabs'
+import ItemRecipeTooltip from './ItemRecipeTooltip'
 
 interface Props {
   unit: PlacedUnit
@@ -223,20 +224,27 @@ function ItemPicker({
         {list.map((item) => {
           // 유니크 아이템만 중복 장착을 막는다. 일반 아이템은 실제 게임처럼 여러 개 껴도 된다.
           const blocked = item.unique && disabledIds.includes(item.id)
-          const recipe = item.from.length ? ` (${item.from.map((f) => f.name).join(' + ')})` : ''
           return (
             <button
               key={item.id}
               type="button"
               disabled={blocked}
               onClick={() => onPick(item.id)}
-              title={blocked ? `${item.name} (유니크 · 이미 장착함)` : `${item.name}${recipe}`}
+              title={blocked ? `${item.name} (유니크 · 이미 장착함)` : item.name}
               className={clsx(
-                'aspect-square rounded-lg bg-ink-850 p-1 transition-transform active:scale-95',
+                'group/tip relative aspect-square rounded-lg bg-ink-850 p-1 transition-transform active:scale-95',
                 blocked && 'opacity-30'
               )}
             >
               {item.icon && <img src={item.icon} alt={item.name} className="h-full w-full object-contain" />}
+
+              {/* 마우스를 올리면 재료 아이콘·이름이 뜬다 */}
+              {!blocked && item.from.length > 0 && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 hidden w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-ink-950 px-2 py-1.5 text-[11px] text-white shadow-lg ring-1 ring-ink-700 group-hover/tip:block">
+                  <p className="mb-1 whitespace-nowrap font-semibold">{item.name}</p>
+                  <ItemRecipeTooltip item={item} />
+                </div>
+              )}
             </button>
           )
         })}

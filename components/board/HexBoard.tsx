@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { BOARD_COLS, BOARD_ROWS, type PlacedUnit } from '@/lib/types'
 import { COST_COLOR, type SetIndex } from '@/lib/synergy'
 import type { Cell } from './useDragPlacement'
+import ItemRecipeTooltip from './ItemRecipeTooltip'
 
 // 육각형 한 칸의 비율과 배치 간격.
 // 가로 7칸 + 홀수 줄의 반 칸 어긋남 = 7.5칸 너비, 세로는 겹쳐 쌓이므로 3.25칸 높이가 된다.
@@ -164,30 +165,37 @@ export default function HexBoard({
                   </div>
                   {/*
                     장착 아이템. 이 줄 자체는 pointer-events-none이라(유닛 드래그를 가리면
-                    안 되니까) 마우스를 올려도 원래 아무 반응이 없다. 아이콘 하나하나에만
-                    pointer-events-auto를 다시 켜서, 그 작은 영역에서만 title 툴팁이 뜨게
-                    한다 — 클릭/드래그는 처리하는 핸들러가 없어 그대로 부모(칸)로 넘어간다.
+                    안 되니까) 마우스를 올려도 원래 아무 반응이 없다. 아이콘 하나하나를
+                    감싼 작은 상자에만 pointer-events-auto를 다시 켜서, 그 영역에서만
+                    호버 툴팁(재료 아이콘)이 뜨게 한다 — 클릭/드래그는 처리하는 핸들러가
+                    없어 그대로 부모(칸)로 넘어간다.
 
                     z-20이 꼭 필요하다: 육각형은 다음 줄과 세로로 25% 겹치도록 배치되는데,
                     이 아이템 줄은 칸의 맨 아래(bottom-3%)라 정확히 그 겹치는 자리다.
                     z-index가 없으면 DOM에서 나중에 그려지는 다음 줄의 칸이 기본으로
                     위에 쌓여 마우스 이벤트를 가로채 버린다 (별 선택 때와 같은 문제).
+                    툴팁 자체는 그보다 더 위(z-30)에 그린다.
                   */}
                   {unit.items.length > 0 && (
                     <div className="pointer-events-none absolute inset-x-0 bottom-[3%] z-20 flex justify-center gap-[2px]">
                       {unit.items.map((itemId, i) => {
                         const item = index.itemById.get(itemId)
                         if (!item?.icon) return null
-                        const recipe = item.from.length ? ` (${item.from.map((f) => f.name).join(' + ')})` : ''
                         return (
-                          <img
-                            key={`${itemId}-${i}`}
-                            src={item.icon}
-                            alt={item.name}
-                            title={`${item.name}${recipe}`}
-                            className="pointer-events-auto w-[22%] rounded-[2px] ring-1 ring-black/60"
-                            draggable={false}
-                          />
+                          <span key={`${itemId}-${i}`} className="group/tip pointer-events-auto relative w-[22%]">
+                            <img
+                              src={item.icon}
+                              alt={item.name}
+                              className="w-full rounded-[2px] ring-1 ring-black/60"
+                              draggable={false}
+                            />
+                            {item.from.length > 0 && (
+                              <div className="pointer-events-none absolute bottom-full left-1/2 z-30 mb-1 hidden w-max max-w-[180px] -translate-x-1/2 rounded-lg bg-ink-950 px-2 py-1.5 text-[10px] text-white shadow-lg ring-1 ring-ink-700 group-hover/tip:block">
+                                <p className="mb-1 font-semibold">{item.name}</p>
+                                <ItemRecipeTooltip item={item} />
+                              </div>
+                            )}
+                          </span>
                         )
                       })}
                     </div>
