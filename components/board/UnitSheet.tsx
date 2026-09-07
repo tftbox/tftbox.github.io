@@ -115,6 +115,11 @@ export default function UnitSheet({ unit, index, onChange, onRemove, onClose }: 
                 {items.map((item, i) => (
                   <li key={`${item.id}-${i}`} className="rounded-lg bg-ink-950 px-3 py-2">
                     <p className="text-xs font-semibold text-white">{item.name}</p>
+                    {item.from.length > 0 && (
+                      <p className="mt-0.5 text-[11px] text-ink-400">
+                        {item.from.map((f) => f.name).join(' + ')}
+                      </p>
+                    )}
                     <p className="desc mt-0.5 text-[11px] leading-relaxed text-ink-400">{item.desc}</p>
                   </li>
                 ))}

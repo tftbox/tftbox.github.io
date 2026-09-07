@@ -162,20 +162,33 @@ export default function HexBoard({
                   <div className="pointer-events-none absolute inset-x-0 bottom-[16%] truncate px-1 text-center text-[8px] font-medium leading-none text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-[10px]">
                     {champ.name}
                   </div>
-                  {/* 장착 아이템 */}
+                  {/*
+                    장착 아이템. 이 줄 자체는 pointer-events-none이라(유닛 드래그를 가리면
+                    안 되니까) 마우스를 올려도 원래 아무 반응이 없다. 아이콘 하나하나에만
+                    pointer-events-auto를 다시 켜서, 그 작은 영역에서만 title 툴팁이 뜨게
+                    한다 — 클릭/드래그는 처리하는 핸들러가 없어 그대로 부모(칸)로 넘어간다.
+
+                    z-20이 꼭 필요하다: 육각형은 다음 줄과 세로로 25% 겹치도록 배치되는데,
+                    이 아이템 줄은 칸의 맨 아래(bottom-3%)라 정확히 그 겹치는 자리다.
+                    z-index가 없으면 DOM에서 나중에 그려지는 다음 줄의 칸이 기본으로
+                    위에 쌓여 마우스 이벤트를 가로채 버린다 (별 선택 때와 같은 문제).
+                  */}
                   {unit.items.length > 0 && (
-                    <div className="pointer-events-none absolute inset-x-0 bottom-[3%] flex justify-center gap-[2px]">
+                    <div className="pointer-events-none absolute inset-x-0 bottom-[3%] z-20 flex justify-center gap-[2px]">
                       {unit.items.map((itemId, i) => {
                         const item = index.itemById.get(itemId)
-                        return item?.icon ? (
+                        if (!item?.icon) return null
+                        const recipe = item.from.length ? ` (${item.from.map((f) => f.name).join(' + ')})` : ''
+                        return (
                           <img
                             key={`${itemId}-${i}`}
                             src={item.icon}
                             alt={item.name}
-                            className="w-[22%] rounded-[2px] ring-1 ring-black/60"
+                            title={`${item.name}${recipe}`}
+                            className="pointer-events-auto w-[22%] rounded-[2px] ring-1 ring-black/60"
                             draggable={false}
                           />
-                        ) : null
+                        )
                       })}
                     </div>
                   )}
