@@ -10,6 +10,7 @@ import { createDeck, DeckNotFoundError, getDeck, updateDeck } from '@/lib/decks'
 import { decodeUnits, encodeUnits } from '@/lib/deck-url'
 import HexBoard from './HexBoard'
 import SynergyPanel from './SynergyPanel'
+import ItemSummary from './ItemSummary'
 import ChampionPool from './ChampionPool'
 import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
@@ -451,9 +452,10 @@ export default function BoardTool({ data }: { data: SetData }) {
 
       {/* 배치판 + 특성 */}
       <div className="grid gap-3 lg:grid-cols-[300px_minmax(0,1fr)]">
-        <div className="order-2 lg:order-1">
-          <div className="lg:sticky lg:top-20">
+        <div className="order-2 space-y-3 lg:order-1">
+          <div className="space-y-3 lg:sticky lg:top-20">
             <SynergyPanel traits={traits} />
+            <ItemSummary units={units} index={index} />
           </div>
         </div>
 
