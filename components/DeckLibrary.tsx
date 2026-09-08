@@ -7,6 +7,7 @@ import clsx from 'clsx'
 import type { Deck, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, COST_COLOR, STYLE_COLOR } from '@/lib/synergy'
 import { deleteDeck, listDecks } from '@/lib/decks'
+import SiteNote from './SiteNote'
 
 export default function DeckLibrary({ data }: { data: SetData }) {
   const index = useMemo(() => buildIndex(data), [data])
@@ -85,6 +86,8 @@ export default function DeckLibrary({ data }: { data: SetData }) {
 
   return (
     <div className="space-y-3">
+      <SiteNote />
+
       <header className="rounded-xl border border-ink-800 bg-ink-900 p-3">
         <div className="flex items-baseline justify-between">
           <h1 className="text-base font-bold text-white">내 덱</h1>

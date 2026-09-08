@@ -33,6 +33,15 @@ create table if not exists public.tft_notes (
 );
 
 -- ---------------------------------------------------------------------------
+-- 밤돌노트 — 배치툴 · 내 덱 상단에 뜨는 공지 한 줄 (딱 한 행만 쓴다)
+-- ---------------------------------------------------------------------------
+create table if not exists public.tft_site_note (
+  id          text primary key default 'global',
+  content     text not null default '',
+  updated_at  timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------------------------
 -- 접근 정책
 --
 -- 로그인 없이 쓰는 개인 도구라서 publishable key(anon)로 읽고 쓸 수 있게 열어 둔다.
@@ -41,6 +50,7 @@ create table if not exists public.tft_notes (
 -- ---------------------------------------------------------------------------
 alter table public.tft_decks enable row level security;
 alter table public.tft_notes enable row level security;
+alter table public.tft_site_note enable row level security;
 
 drop policy if exists "tft_decks anon full access" on public.tft_decks;
 create policy "tft_decks anon full access"
@@ -51,5 +61,11 @@ create policy "tft_decks anon full access"
 drop policy if exists "tft_notes anon full access" on public.tft_notes;
 create policy "tft_notes anon full access"
   on public.tft_notes for all
+  to anon, authenticated
+  using (true) with check (true);
+
+drop policy if exists "tft_site_note anon full access" on public.tft_site_note;
+create policy "tft_site_note anon full access"
+  on public.tft_site_note for all
   to anon, authenticated
   using (true) with check (true);

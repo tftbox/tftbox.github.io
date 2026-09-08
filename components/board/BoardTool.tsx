@@ -15,6 +15,7 @@ import ChampionPool from './ChampionPool'
 import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
 import DeckPicker from './DeckPicker'
+import SiteNote from '../SiteNote'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
 /** 이 시간 안에 같은 칸을 다시 두드리면 "두 번 두드림"으로 본다 */
@@ -376,6 +377,8 @@ export default function BoardTool({ data }: { data: SetData }) {
 
   return (
     <div className="space-y-3">
+      <SiteNote />
+
       {/* 덱 이름 · 저장 */}
       <section className="rounded-xl border border-ink-800 bg-ink-900 p-3">
         <div className="flex flex-wrap items-center gap-2">
