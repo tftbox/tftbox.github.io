@@ -21,6 +21,31 @@ const SET_NUMBER = Number(process.env.SET || 18)
 const SOURCE = 'https://raw.communitydragon.org/latest/cdragon/tft/ko_kr.json'
 const GAME_CDN = 'https://raw.communitydragon.org/latest/game/'
 
+/**
+ * 자동으로 가져올 수 없는 유닛을 손으로 보탠다.
+ *
+ * 특성 효과로 저절로 소환되는 유닛(나무정령의 돌껍질 나무·생명꽃 같은 것)은
+ * 상점에서 사는 일반 챔피언이 아니라서, Community Dragon의 캐릭터 목록에
+ * 아예 없다 — 이름과 능력만 존재하고 데이터로 노출된 실체가 없다.
+ * traits를 비워 둬서 특성 계산에는 끼어들지 않게 한다 (얻는 대상이지
+ * 조건을 채우는 쪽이 아니다). 시즌이 바뀌면 이 목록도 다시 확인해야 한다.
+ */
+const MANUAL_UNITS = {
+  18: [
+    {
+      id: 'MANUAL_18_StonebarkTree',
+      name: '돌껍질 나무',
+      // 전용 초상화가 없어 나무정령 특성 아이콘을 대신 쓴다
+      tileIcon: 'assets/ux/traiticons/trait_icon_18_elderwood.tex',
+    },
+    {
+      id: 'MANUAL_18_Lifeblossom',
+      name: '생명꽃',
+      tileIcon: 'assets/ux/traiticons/trait_icon_18_elderwood.tex',
+    },
+  ],
+}
+
 // 기본 아이템을 화면에 늘어놓을 순서 (접두사를 뗀 이름 기준)
 const COMPONENT_ORDER = [
   'BFSword',
@@ -250,7 +275,20 @@ async function main() {
           }
         : null,
     }))
-    .sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name, 'ko'))
+
+  for (const u of MANUAL_UNITS[SET_NUMBER] ?? []) {
+    champions.push({
+      id: u.id,
+      name: u.name,
+      cost: 0,
+      traits: [],
+      icon: iconPath(u.tileIcon),
+      ability: null,
+      stats: null,
+    })
+  }
+
+  champions.sort((a, b) => a.cost - b.cost || a.name.localeCompare(b.name, 'ko'))
 
   // ---- 아이템 --------------------------------------------------------------
   const itemById = new Map(raw.items.map((i) => [i.apiName, i]))
