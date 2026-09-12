@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Search, Trash2 } from 'lucide-react'
+import { RotateCcw, Search, Trash2 } from 'lucide-react'
 import clsx from 'clsx'
 import type { Deck, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, COST_COLOR, STYLE_COLOR } from '@/lib/synergy'
-import { deleteDeck, listDecks } from '@/lib/decks'
+import { countTrashedDecks, listDecks, trashAllDecks, trashDeck } from '@/lib/decks'
 import SiteNote from './SiteNote'
+import TrashSheet from './TrashSheet'
 
 export default function DeckLibrary({ data }: { data: SetData }) {
   const index = useMemo(() => buildIndex(data), [data])
@@ -15,12 +16,33 @@ export default function DeckLibrary({ data }: { data: SetData }) {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [activeTag, setActiveTag] = useState<string | null>(null)
+  const [trashCount, setTrashCount] = useState(0)
+  const [trashOpen, setTrashOpen] = useState(false)
 
-  useEffect(() => {
+  const refreshTrashCount = useCallback(() => {
+    countTrashedDecks(data.set)
+      .then(setTrashCount)
+      .catch(() => {
+        /* 휴지통 개수 배지는 실패해도 조용히 넘어간다 */
+      })
+  }, [data.set])
+
+  const refreshDecks = useCallback(() => {
     listDecks(data.set)
       .then(setDecks)
       .catch((e: unknown) => setError(e instanceof Error ? e.message : '덱을 불러오지 못했습니다.'))
   }, [data.set])
+
+  useEffect(() => {
+    refreshDecks()
+    refreshTrashCount()
+  }, [refreshDecks, refreshTrashCount])
+
+  // 휴지통에서 복원하면(=다시 목록에 보여야 함) 목록과 배지 둘 다 새로 불러온다
+  const onTrashChanged = () => {
+    refreshDecks()
+    refreshTrashCount()
+  }
 
   // 덱마다 검색에 쓸 문자열과 화면에 보여줄 요약을 미리 만들어 둔다
   const enriched = useMemo(() => {
@@ -74,13 +96,27 @@ export default function DeckLibrary({ data }: { data: SetData }) {
     })
   }, [enriched, query, activeTag])
 
+  /** 목록에서 지우는 건 실제로는 휴지통으로 보내는 것 — 실수로 지워도 휴지통에서 되돌릴 수 있다 */
   const remove = async (deck: Deck) => {
-    if (!confirm(`"${deck.name}" 덱을 삭제할까요?`)) return
     try {
-      await deleteDeck(deck.id)
+      await trashDeck(deck.id)
       setDecks((prev) => prev?.filter((d) => d.id !== deck.id) ?? null)
+      setTrashCount((n) => n + 1)
     } catch (e) {
       setError(e instanceof Error ? e.message : '삭제하지 못했습니다.')
+    }
+  }
+
+  /** 우측 상단 "초기화" — 지금 보이는 덱을 한꺼번에 휴지통으로 보내고 새로 시작한다 */
+  const resetAll = async () => {
+    if (!decks?.length) return
+    if (!confirm(`덱 ${decks.length}개를 전부 휴지통으로 보낼까요? 휴지통에서 다시 복원할 수 있습니다.`)) return
+    try {
+      await trashAllDecks(data.set)
+      setTrashCount((n) => n + decks.length)
+      setDecks([])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '초기화하지 못했습니다.')
     }
   }
 
@@ -89,11 +125,38 @@ export default function DeckLibrary({ data }: { data: SetData }) {
       <SiteNote />
 
       <header className="rounded-xl border border-ink-800 bg-ink-900 p-3">
-        <div className="flex items-baseline justify-between">
-          <h1 className="text-base font-bold text-white">내 덱</h1>
-          <span className="text-xs text-ink-400">
-            시즌 {data.set} · {decks?.length ?? 0}개
-          </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-base font-bold text-white">내 덱</h1>
+            <span className="text-xs text-ink-400">
+              시즌 {data.set} · {decks?.length ?? 0}개
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setTrashOpen(true)}
+              title="휴지통 (지운 덱을 되돌리거나 완전히 없앱니다)"
+              className="relative rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-800 hover:text-white"
+            >
+              <Trash2 size={16} />
+              {trashCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                  {trashCount}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={resetAll}
+              disabled={!decks?.length}
+              title="지금 보이는 덱을 전부 휴지통으로 보내고 새로 시작합니다"
+              className="flex items-center gap-1 rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/20 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-red-500/10"
+            >
+              <RotateCcw size={14} />
+              초기화
+            </button>
+          </div>
         </div>
 
         <div className="relative mt-2">
@@ -231,6 +294,14 @@ export default function DeckLibrary({ data }: { data: SetData }) {
           </li>
         ))}
       </ul>
+
+      {trashOpen && (
+        <TrashSheet
+          setNumber={data.set}
+          onClose={() => setTrashOpen(false)}
+          onChanged={onTrashChanged}
+        />
+      )}
     </div>
   )
 }

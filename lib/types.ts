@@ -97,6 +97,8 @@ export interface Deck {
   memo: string
   createdAt: string
   updatedAt: string
+  /** 휴지통으로 보낸 시각. null이면 정상적으로 목록에 보이는 덱 */
+  deletedAt: string | null
 }
 
 /** 즐겨찾기 / 메모를 붙일 수 있는 대상 */

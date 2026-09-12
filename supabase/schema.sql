@@ -14,8 +14,12 @@ create table if not exists public.tft_decks (
   units       jsonb not null default '[]'::jsonb,
   memo        text not null default '',
   created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now()
+  updated_at  timestamptz not null default now(),
+  deleted_at  timestamptz
 );
+
+-- 이미 만든 표에 새로 추가하는 열(있으면 건너뛴다)
+alter table public.tft_decks add column if not exists deleted_at timestamptz;
 
 create index if not exists tft_decks_set_updated_idx
   on public.tft_decks (set_number, updated_at desc);
