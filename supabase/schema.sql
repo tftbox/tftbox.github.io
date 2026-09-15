@@ -48,28 +48,39 @@ create table if not exists public.tft_site_note (
 -- ---------------------------------------------------------------------------
 -- 접근 정책
 --
--- 로그인 없이 쓰는 개인 도구라서 publishable key(anon)로 읽고 쓸 수 있게 열어 둔다.
--- 즉, 주소와 키를 아는 사람은 누구나 이 두 테이블을 보고 고칠 수 있다.
--- 나중에 로그인을 붙이면 이 정책을 auth.uid() 기준으로 바꾸면 된다.
+-- 보는 건 로그인 없이 누구나(anon) 가능하고, 저장 · 수정 · 삭제는 로그인한
+-- 사람(authenticated)만 할 수 있다. 회원가입 화면은 사이트에 없으므로,
+-- Supabase 대시보드 → Authentication → Users에서 계정을 직접 하나 만들어야
+-- 그 계정으로 로그인해 고칠 수 있다.
 -- ---------------------------------------------------------------------------
 alter table public.tft_decks enable row level security;
 alter table public.tft_notes enable row level security;
 alter table public.tft_site_note enable row level security;
 
 drop policy if exists "tft_decks anon full access" on public.tft_decks;
-create policy "tft_decks anon full access"
-  on public.tft_decks for all
-  to anon, authenticated
-  using (true) with check (true);
+drop policy if exists "tft_decks public read" on public.tft_decks;
+drop policy if exists "tft_decks owner insert" on public.tft_decks;
+drop policy if exists "tft_decks owner update" on public.tft_decks;
+drop policy if exists "tft_decks owner delete" on public.tft_decks;
+create policy "tft_decks public read" on public.tft_decks for select to anon, authenticated using (true);
+create policy "tft_decks owner insert" on public.tft_decks for insert to authenticated with check (true);
+create policy "tft_decks owner update" on public.tft_decks for update to authenticated using (true) with check (true);
+create policy "tft_decks owner delete" on public.tft_decks for delete to authenticated using (true);
 
 drop policy if exists "tft_notes anon full access" on public.tft_notes;
-create policy "tft_notes anon full access"
-  on public.tft_notes for all
-  to anon, authenticated
-  using (true) with check (true);
+drop policy if exists "tft_notes public read" on public.tft_notes;
+drop policy if exists "tft_notes owner insert" on public.tft_notes;
+drop policy if exists "tft_notes owner update" on public.tft_notes;
+drop policy if exists "tft_notes owner delete" on public.tft_notes;
+create policy "tft_notes public read" on public.tft_notes for select to anon, authenticated using (true);
+create policy "tft_notes owner insert" on public.tft_notes for insert to authenticated with check (true);
+create policy "tft_notes owner update" on public.tft_notes for update to authenticated using (true) with check (true);
+create policy "tft_notes owner delete" on public.tft_notes for delete to authenticated using (true);
 
 drop policy if exists "tft_site_note anon full access" on public.tft_site_note;
-create policy "tft_site_note anon full access"
-  on public.tft_site_note for all
-  to anon, authenticated
-  using (true) with check (true);
+drop policy if exists "tft_site_note public read" on public.tft_site_note;
+drop policy if exists "tft_site_note owner insert" on public.tft_site_note;
+drop policy if exists "tft_site_note owner update" on public.tft_site_note;
+create policy "tft_site_note public read" on public.tft_site_note for select to anon, authenticated using (true);
+create policy "tft_site_note owner insert" on public.tft_site_note for insert to authenticated with check (true);
+create policy "tft_site_note owner update" on public.tft_site_note for update to authenticated using (true) with check (true);

@@ -16,6 +16,7 @@ import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
 import DeckPicker from './DeckPicker'
 import SiteNote from '../SiteNote'
+import { useAuth } from '@/lib/auth-context'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
 /** 이 시간 안에 같은 칸을 다시 두드리면 "두 번 두드림"으로 본다 */
@@ -24,6 +25,7 @@ const DOUBLE_TAP_MS = 400
 const MAX_ITEMS = 3
 
 export default function BoardTool({ data }: { data: SetData }) {
+  const { isOwner } = useAuth()
   const index = useMemo(() => buildIndex(data), [data])
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -381,62 +383,68 @@ export default function BoardTool({ data }: { data: SetData }) {
 
       {/* 덱 이름 · 저장 */}
       <section className="rounded-xl border border-ink-800 bg-ink-900 p-3">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="덱 이름 (예: 4암흑의별 리롤)"
-            className="min-w-0 flex-1 rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
+            // 모바일에서는 버튼 줄에 밀려 입력칸이 찌그러지지 않도록 아예 제 줄을 갖는다.
+            // 데스크톱은 폭이 넉넉해서 그대로 같은 줄에 붙여도 된다.
+            className="w-full min-w-0 rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400 md:flex-1"
           />
-          <button
-            type="button"
-            onClick={() => setPickingDeck(true)}
-            title="저장해 둔 덱을 불러와 이어서 고칩니다"
-            className="flex items-center gap-1.5 rounded-lg bg-ink-850 px-3 py-2 text-sm font-semibold text-ink-200 transition-colors hover:bg-ink-800"
-          >
-            <FolderOpen size={15} />
-            불러오기
-          </button>
-          <button
-            type="button"
-            onClick={saveAsNew}
-            disabled={saving}
-            title="지금 배치를 새 덱으로 저장합니다"
-            className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-ink-950 transition-opacity disabled:opacity-50"
-          >
-            <SavePlus size={15} />
-            저장
-          </button>
-          {deckId && (
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={overwrite}
-              disabled={saving}
-              title="열어 둔 덱에 지금 배치를 덮어씁니다"
-              className="flex items-center gap-1.5 rounded-lg bg-ink-800 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-ink-700 disabled:opacity-50"
+              onClick={() => setPickingDeck(true)}
+              title="저장해 둔 덱을 불러와 이어서 고칩니다"
+              className="flex items-center gap-1.5 rounded-lg bg-ink-850 px-3 py-2 text-sm font-semibold text-ink-200 transition-colors hover:bg-ink-800"
             >
-              <Save size={15} />
-              덮어쓰기
+              <FolderOpen size={15} />
+              불러오기
             </button>
-          )}
-          <button
-            type="button"
-            onClick={copyShareLink}
-            aria-label="공유 링크 복사"
-            title="공유 링크 복사"
-            className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
-          >
-            <Link2 size={17} />
-          </button>
-          <button
-            type="button"
-            onClick={clearBoard}
-            title="배치판·이름·태그·메모를 한 번에 비웁니다 (저장된 덱은 그대로 남습니다)"
-            className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/20"
-          >
-            <RotateCcw size={15} />
-            초기화
-          </button>
+            {isOwner && (
+              <button
+                type="button"
+                onClick={saveAsNew}
+                disabled={saving}
+                title="지금 배치를 새 덱으로 저장합니다"
+                className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-ink-950 transition-opacity disabled:opacity-50"
+              >
+                <SavePlus size={15} />
+                저장
+              </button>
+            )}
+            {isOwner && deckId && (
+              <button
+                type="button"
+                onClick={overwrite}
+                disabled={saving}
+                title="열어 둔 덱에 지금 배치를 덮어씁니다"
+                className="flex items-center gap-1.5 rounded-lg bg-ink-800 px-3 py-2 text-sm font-semibold text-white transition-opacity hover:bg-ink-700 disabled:opacity-50"
+              >
+                <Save size={15} />
+                덮어쓰기
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={copyShareLink}
+              aria-label="공유 링크 복사"
+              title="공유 링크 복사"
+              className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
+            >
+              <Link2 size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={clearBoard}
+              title="배치판·이름·태그·메모를 한 번에 비웁니다 (저장된 덱은 그대로 남습니다)"
+              className="flex items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/20"
+            >
+              <RotateCcw size={15} />
+              초기화
+            </button>
+          </div>
         </div>
 
         <TagEditor tags={tags} onChange={setTags} />

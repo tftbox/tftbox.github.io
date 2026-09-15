@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import NavBar from '@/components/NavBar'
+import { AuthProvider } from '@/lib/auth-context'
 import { CURRENT_SET } from '@/lib/set-data'
 
 export const metadata: Metadata = {
@@ -19,8 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <NavBar setNumber={CURRENT_SET} />
-        <main className="pb-navbar mx-auto max-w-[1400px] px-3 pt-3 md:px-5 md:pt-5">{children}</main>
+        <AuthProvider>
+          <NavBar setNumber={CURRENT_SET} />
+          <main className="pb-navbar mx-auto max-w-[1400px] px-3 pt-3 md:px-5 md:pt-5">{children}</main>
+        </AuthProvider>
       </body>
     </html>
   )

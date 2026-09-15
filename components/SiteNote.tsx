@@ -3,15 +3,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, Megaphone, Pencil, X } from 'lucide-react'
 import { getSiteNote, saveSiteNote } from '@/lib/site-note'
+import { useAuth } from '@/lib/auth-context'
 
 /**
  * 배치툴과 내 덱 상단에 뜨는 공지 한 줄.
  *
- * 로그인이 없는 개인 도구라 "누가 쓰는 화면인지"를 가리지 않는다 — 어느 쪽에서 고쳐도
+ * 누구나 보지만, 고치는 건 로그인한 본인만 할 수 있다. 어느 화면에서 고쳐도
  * 같은 한 줄을 같이 본다. 새로고침해야 서로 반영되고(실시간 동기화는 하지 않는다),
  * 비워 두면 아예 표시가 사라진다.
  */
 export default function SiteNote() {
+  const { isOwner } = useAuth()
   const [content, setContent] = useState<string | null>(null) // null = 아직 안 불러옴
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
@@ -111,6 +113,7 @@ export default function SiteNote() {
   }
 
   if (!content) {
+    if (!isOwner) return null // 볼 것도 없고 고칠 수도 없으면 아무것도 안 보여준다
     return (
       <button
         type="button"
@@ -131,15 +134,17 @@ export default function SiteNote() {
           <span className="font-semibold text-accent">밤돌노트 : </span>
           <span className="text-accent/90">{content}</span>
         </p>
-        <button
-          type="button"
-          onClick={startEdit}
-          aria-label="밤돌노트 수정"
-          title="밤돌노트 수정"
-          className="shrink-0 rounded-lg p-1 text-accent/60 transition-colors hover:bg-accent/10 hover:text-accent"
-        >
-          <Pencil size={13} />
-        </button>
+        {isOwner && (
+          <button
+            type="button"
+            onClick={startEdit}
+            aria-label="밤돌노트 수정"
+            title="밤돌노트 수정"
+            className="shrink-0 rounded-lg p-1 text-accent/60 transition-colors hover:bg-accent/10 hover:text-accent"
+          >
+            <Pencil size={13} />
+          </button>
+        )}
       </div>
     </section>
   )

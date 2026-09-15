@@ -7,10 +7,12 @@ import clsx from 'clsx'
 import type { Deck, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, COST_COLOR, STYLE_COLOR } from '@/lib/synergy'
 import { countTrashedDecks, listDecks, trashAllDecks, trashDeck } from '@/lib/decks'
+import { useAuth } from '@/lib/auth-context'
 import SiteNote from './SiteNote'
 import TrashSheet from './TrashSheet'
 
 export default function DeckLibrary({ data }: { data: SetData }) {
+  const { isOwner } = useAuth()
   const index = useMemo(() => buildIndex(data), [data])
   const [decks, setDecks] = useState<Deck[] | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -132,31 +134,33 @@ export default function DeckLibrary({ data }: { data: SetData }) {
               시즌 {data.set} · {decks?.length ?? 0}개
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setTrashOpen(true)}
-              title="휴지통 (지운 덱을 되돌리거나 완전히 없앱니다)"
-              className="relative rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-800 hover:text-white"
-            >
-              <Trash2 size={16} />
-              {trashCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
-                  {trashCount}
-                </span>
-              )}
-            </button>
-            <button
-              type="button"
-              onClick={resetAll}
-              disabled={!decks?.length}
-              title="지금 보이는 덱을 전부 휴지통으로 보내고 새로 시작합니다"
-              className="flex items-center gap-1 rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/20 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-red-500/10"
-            >
-              <RotateCcw size={14} />
-              초기화
-            </button>
-          </div>
+          {isOwner && (
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setTrashOpen(true)}
+                title="휴지통 (지운 덱을 되돌리거나 완전히 없앱니다)"
+                className="relative rounded-lg p-1.5 text-ink-400 transition-colors hover:bg-ink-800 hover:text-white"
+              >
+                <Trash2 size={16} />
+                {trashCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                    {trashCount}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={resetAll}
+                disabled={!decks?.length}
+                title="지금 보이는 덱을 전부 휴지통으로 보내고 새로 시작합니다"
+                className="flex items-center gap-1 rounded-lg bg-red-500/10 px-2.5 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/20 disabled:cursor-default disabled:opacity-40 disabled:hover:bg-red-500/10"
+              >
+                <RotateCcw size={14} />
+                초기화
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="relative mt-2">
@@ -211,7 +215,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
 
       <ul className="grid gap-2 md:grid-cols-2">
         {filtered.map(({ deck, champions, traits, items }) => (
-          <li key={deck.id} className="rounded-xl border border-ink-800 bg-ink-900 p-3">
+          <li key={deck.id} className="min-w-0 rounded-xl border border-ink-800 bg-ink-900 p-3">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <h2 className="truncate text-sm font-bold text-white">{deck.name}</h2>
@@ -219,14 +223,16 @@ export default function DeckLibrary({ data }: { data: SetData }) {
                   유닛 {deck.units.length} · {formatDate(deck.updatedAt)}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => remove(deck)}
-                aria-label="덱 삭제"
-                className="shrink-0 rounded p-1.5 text-ink-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
-              >
-                <Trash2 size={15} />
-              </button>
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => remove(deck)}
+                  aria-label="덱 삭제"
+                  className="shrink-0 rounded p-1.5 text-ink-400 transition-colors hover:bg-red-500/10 hover:text-red-400"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
             </div>
 
             {/* 활성 특성 */}
@@ -295,7 +301,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
         ))}
       </ul>
 
-      {trashOpen && (
+      {trashOpen && isOwner && (
         <TrashSheet
           setNumber={data.set}
           onClose={() => setTrashOpen(false)}

@@ -5,6 +5,7 @@ import { Search, Star, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Item } from '@/lib/types'
 import { useNotes } from '@/lib/use-notes'
+import { useAuth } from '@/lib/auth-context'
 import Sheet from '@/components/Sheet'
 
 type Filter = 'all' | 'favorite' | 'exclusive'
@@ -142,6 +143,7 @@ export function ItemDetail({
   onClose: () => void
   extra?: React.ReactNode
 }) {
+  const { isOwner } = useAuth()
   const [memo, setMemo] = useState(note.memo)
 
   return (
@@ -152,14 +154,18 @@ export function ItemDetail({
           <h3 className="text-base font-bold text-white">{item.name}</h3>
           {item.setExclusive && <span className="text-[11px] text-accent">이번 시즌 전용 유물</span>}
         </div>
-        <button
-          type="button"
-          onClick={onToggleFavorite}
-          aria-label="즐겨찾기"
-          className="rounded p-1 text-ink-400 hover:text-amber-400"
-        >
-          <Star size={20} className={note.favorite ? 'fill-amber-400 text-amber-400' : ''} />
-        </button>
+        {isOwner ? (
+          <button
+            type="button"
+            onClick={onToggleFavorite}
+            aria-label="즐겨찾기"
+            className="rounded p-1 text-ink-400 hover:text-amber-400"
+          >
+            <Star size={20} className={note.favorite ? 'fill-amber-400 text-amber-400' : ''} />
+          </button>
+        ) : (
+          note.favorite && <Star size={20} className="fill-amber-400 text-amber-400" aria-hidden />
+        )}
         <button type="button" onClick={onClose} aria-label="닫기" className="rounded p-1 text-ink-400 hover:text-white">
           <X size={18} />
         </button>
@@ -170,18 +176,21 @@ export function ItemDetail({
 
         {extra}
 
-        <div>
-          <label className="mb-1.5 block text-xs font-semibold text-ink-400">내 메모</label>
-          <textarea
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            onBlur={() => memo !== note.memo && onMemo(memo)}
-            rows={3}
-            placeholder="어떤 챔피언한테 좋은지, 언제 고를지 적어두세요"
-            className="w-full resize-none rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
-          />
-          <p className="mt-1 text-[11px] text-ink-400">입력칸 밖을 누르면 저장됩니다.</p>
-        </div>
+        {(isOwner || memo) && (
+          <div>
+            <label className="mb-1.5 block text-xs font-semibold text-ink-400">내 메모</label>
+            <textarea
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              onBlur={() => isOwner && memo !== note.memo && onMemo(memo)}
+              readOnly={!isOwner}
+              rows={3}
+              placeholder="어떤 챔피언한테 좋은지, 언제 고를지 적어두세요"
+              className="w-full resize-none rounded-lg bg-ink-850 px-3 py-2 text-sm text-white placeholder:text-ink-400"
+            />
+            {isOwner && <p className="mt-1 text-[11px] text-ink-400">입력칸 밖을 누르면 저장됩니다.</p>}
+          </div>
+        )}
       </div>
     </Sheet>
   )
