@@ -452,21 +452,21 @@ export default function BoardTool({ data }: { data: SetData }) {
             )}
             <button
               type="button"
+              onClick={copyTeamCode}
+              title="게임 안 팀 계획표에 붙여넣을 코드를 복사합니다 (챔피언만 담기고, 배치·성급·아이템은 게임에서 다시 정해야 해요)"
+              className="flex items-center gap-1.5 rounded-lg bg-accent/15 px-3 py-2 text-sm font-semibold text-accent transition-colors hover:bg-accent/25"
+            >
+              <ClipboardCopy size={15} />
+              팀 코드 복사
+            </button>
+            <button
+              type="button"
               onClick={copyShareLink}
               aria-label="공유 링크 복사"
               title="공유 링크 복사"
               className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
             >
               <Link2 size={17} />
-            </button>
-            <button
-              type="button"
-              onClick={copyTeamCode}
-              aria-label="팀 코드 복사"
-              title="게임 안 팀 계획표에 붙여넣을 코드를 복사합니다 (챔피언만 담기고, 배치·성급·아이템은 게임에서 다시 정해야 해요)"
-              className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
-            >
-              <ClipboardCopy size={17} />
             </button>
             <button
               type="button"
