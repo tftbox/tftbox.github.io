@@ -39,6 +39,8 @@ export interface Champion {
     mana: number
     initialMana: number
   } | null
+  /** 게임 안 "팀 코드" 붙여넣기에 쓰는 번호 (16진수 문자열). 없으면 팀 코드에 포함할 수 없다 */
+  teamPlannerCode: string | null
 }
 
 export type TraitStyle = 'none' | 'bronze' | 'silver' | 'gold' | 'unique' | 'prismatic'

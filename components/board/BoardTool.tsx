@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
+import { ClipboardCopy, FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Deck, PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
 import { createDeck, DeckNotFoundError, getDeck, updateDeck } from '@/lib/decks'
 import { decodeUnits, encodeUnits } from '@/lib/deck-url'
+import { buildTeamCode } from '@/lib/team-code'
 import HexBoard from './HexBoard'
 import SynergyPanel from './SynergyPanel'
 import ItemSummary from './ItemSummary'
@@ -326,6 +327,29 @@ export default function BoardTool({ data }: { data: SetData }) {
   }
 
   /**
+   * 게임 안 "팀 계획표"에 붙여넣을 수 있는 코드. 어떤 챔피언이 있는지만 담기고
+   * 배치·성급·아이템은 안 담긴다 — 게임에서 다시 정해야 한다.
+   */
+  const copyTeamCode = async () => {
+    if (!units.length) return setStatus('먼저 챔피언을 배치해 주세요.')
+    const result = buildTeamCode(units, index, data.set)
+    if (!result) return setStatus('팀 코드로 담을 수 있는 챔피언이 없습니다.')
+
+    try {
+      await navigator.clipboard.writeText(result.code)
+      const notes: string[] = []
+      if (result.overflowNames.length) notes.push(`10명이 넘어 ${result.overflowNames.join(', ')}은(는) 빠짐`)
+      if (result.skippedNames.length) notes.push(`${result.skippedNames.join(', ')}은(는) 팀 코드가 없어 빠짐`)
+      setStatus(
+        `팀 코드를 복사했습니다 (챔피언 ${result.includedCount}명 — 배치·성급·아이템은 게임에서 다시 정해야 해요)` +
+          (notes.length ? ` · ${notes.join(' · ')}` : '')
+      )
+    } catch {
+      setStatus('복사에 실패했습니다.')
+    }
+  }
+
+  /**
    * 링크 없이 배치툴에 들어오면 항상 빈 판이라 deckId가 없고, 그러면 "덮어쓰기"가
    * 뜰 수가 없다. 여기서 기존 덱을 바로 골라 이어서 고칠 수 있게 한다.
    */
@@ -434,6 +458,15 @@ export default function BoardTool({ data }: { data: SetData }) {
               className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
             >
               <Link2 size={17} />
+            </button>
+            <button
+              type="button"
+              onClick={copyTeamCode}
+              aria-label="팀 코드 복사"
+              title="게임 안 팀 계획표에 붙여넣을 코드를 복사합니다 (챔피언만 담기고, 배치·성급·아이템은 게임에서 다시 정해야 해요)"
+              className="rounded-lg bg-ink-850 p-2 text-ink-400 transition-colors hover:text-white"
+            >
+              <ClipboardCopy size={17} />
             </button>
             <button
               type="button"

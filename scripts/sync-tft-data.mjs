@@ -20,6 +20,10 @@ const SET_NUMBER = Number(process.env.SET || 18)
 
 const SOURCE = 'https://raw.communitydragon.org/latest/cdragon/tft/ko_kr.json'
 const GAME_CDN = 'https://raw.communitydragon.org/latest/game/'
+// 게임 안 "팀 코드"(Team Planner) 붙여넣기용 챔피언 번호. lolchess.gg 등에서 이 코드를
+// 16진수 3자리로 그대로 쓰는 걸 실제 배포 코드에서 확인했다 (예: 1026 -> "402").
+const TEAMPLANNER_SOURCE =
+  'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/tftchampions-teamplanner.json'
 
 /**
  * 자동으로 가져올 수 없는 유닛을 손으로 보탠다.
@@ -238,6 +242,18 @@ async function main() {
   const set = raw.sets[String(SET_NUMBER)]
   if (!set) throw new Error(`세트 ${SET_NUMBER} 데이터를 찾을 수 없습니다.`)
 
+  // 팀 코드용 챔피언 번호. 없는 세트(예: 이 엔드포인트가 아직 안 열린 다음 시즌)도
+  // 있을 수 있어 실패해도 전체 동기화를 막지 않는다 — 그냥 팀 코드 기능만 빠진다.
+  let teamPlannerCodeById = new Map()
+  try {
+    const teamPlannerData = await fetchJson(TEAMPLANNER_SOURCE)
+    const entries = teamPlannerData[`TFTSet${SET_NUMBER}`] ?? []
+    teamPlannerCodeById = new Map(entries.map((e) => [e.character_id, e.team_planner_code.toString(16)]))
+    log(`팀 코드 번호 ${teamPlannerCodeById.size}개 찾음`)
+  } catch (err) {
+    log('팀 코드 번호를 못 받아 옴 (팀 코드 기능은 이번엔 빠진다):', err.message)
+  }
+
   // ---- 챔피언 --------------------------------------------------------------
   // 세트 목록에는 골렘·훈련봇·모루처럼 모든 세트가 공유하는 유닛도 섞여 있다.
   // 아이콘 경로에 tft{세트번호}가 들어 있는지로 이번 세트 유닛만 골라낸다.
@@ -274,6 +290,7 @@ async function main() {
             initialMana: c.stats.initialMana || 0,
           }
         : null,
+      teamPlannerCode: teamPlannerCodeById.get(c.apiName) ?? null,
     }))
 
   for (const u of MANUAL_UNITS[SET_NUMBER] ?? []) {
@@ -285,6 +302,8 @@ async function main() {
       icon: iconPath(u.tileIcon),
       ability: null,
       stats: null,
+      // 상점에서 살 수 있는 챔피언이 아니라 팀 코드용 번호 자체가 없다
+      teamPlannerCode: null,
     })
   }
 
