@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import clsx from 'clsx'
 import type { SetData } from '@/lib/types'
 import DeckLibrary from './DeckLibrary'
@@ -13,9 +13,19 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'augments', label: '증강체 순위' },
 ]
 
-/** "내 덱" 페이지 안에서 탭으로 화면을 바꾼다. 아이템·증강체 순위는 내용이 아직 없다 */
+/**
+ * "내 덱" 페이지 안에서 탭으로 화면을 바꾼다. 아이템·증강체 순위는 내용이 아직 없다.
+ * 지금 탭을 ?tab= 주소에 남겨서, 배치툴 같은 다른 화면에서 특정 탭으로 바로 링크할 수 있게 한다.
+ */
 export default function DeckTabs({ data }: { data: SetData }) {
-  const [tab, setTab] = useState<Tab>('decks')
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const tab: Tab = tabParam === 'items' || tabParam === 'augments' ? tabParam : 'decks'
+
+  const setTab = (next: Tab) => {
+    router.replace(next === 'decks' ? '/decks' : `/decks?tab=${next}`)
+  }
 
   return (
     <div className="space-y-3">

@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ClipboardCopy, FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
+import { ClipboardCopy, FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, TrendingUp, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Deck, PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
@@ -480,7 +481,25 @@ export default function BoardTool({ data }: { data: SetData }) {
           </div>
         </div>
 
-        <TagEditor tags={tags} onChange={setTags} />
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <TagEditor tags={tags} onChange={setTags} />
+          <div className="flex shrink-0 items-center gap-1.5 text-xs">
+            <Link
+              href="/decks?tab=items"
+              className="flex items-center gap-1 rounded-lg bg-ink-850 px-2.5 py-1.5 font-medium text-ink-400 transition-colors hover:bg-ink-800 hover:text-ink-200"
+            >
+              <TrendingUp size={13} />
+              아이템 순위
+            </Link>
+            <Link
+              href="/decks?tab=augments"
+              className="flex items-center gap-1 rounded-lg bg-ink-850 px-2.5 py-1.5 font-medium text-ink-400 transition-colors hover:bg-ink-800 hover:text-ink-200"
+            >
+              <TrendingUp size={13} />
+              증강체 순위
+            </Link>
+          </div>
+        </div>
 
         <div className="mt-2 flex items-center gap-3 text-xs text-ink-400">
           <span>
@@ -649,7 +668,7 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (next: string
   }
 
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {tags.map((tag) => (
         <span key={tag} className="flex items-center gap-1 rounded-md bg-ink-800 px-2 py-1 text-[11px] text-ink-200">
           #{tag}
