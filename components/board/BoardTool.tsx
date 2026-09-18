@@ -17,8 +17,8 @@ import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
 import DeckPicker from './DeckPicker'
 import SiteNote from '../SiteNote'
-import ComingSoon from '../ComingSoon'
 import ItemRankings from '../ItemRankings'
+import ArtifactRankings from '../ArtifactRankings'
 import { useAuth } from '@/lib/auth-context'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
@@ -33,9 +33,9 @@ export default function BoardTool({ data }: { data: SetData }) {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // 배치판/아이템/증강 탭을 바꿔도 배치판 상태(유닛·이름·태그 등)가 사라지면 안 되니,
+  // 배치판/아이템/유물 탭을 바꿔도 배치판 상태(유닛·이름·태그 등)가 사라지면 안 되니,
   // 탭 콘텐츠를 조건부로 그리지 않고 항상 그려 둔 채 CSS로만 숨긴다(아래 return 참고)
-  const [pageTab, setPageTab] = useState<'board' | 'items' | 'augments'>('board')
+  const [pageTab, setPageTab] = useState<'board' | 'items' | 'artifacts'>('board')
 
   const [units, setUnits] = useState<PlacedUnit[]>([])
   const [name, setName] = useState('')
@@ -428,7 +428,7 @@ export default function BoardTool({ data }: { data: SetData }) {
       </div>
 
       {pageTab === 'items' && <ItemRankings data={data} />}
-      {pageTab === 'augments' && <ComingSoon title="증강체 순위" />}
+      {pageTab === 'artifacts' && <ArtifactRankings data={data} />}
 
       {/* 탭을 바꿔도 배치판 상태가 사라지지 않도록, 숨길 때도 계속 그려 둔다 */}
       <div className={clsx('space-y-3', pageTab !== 'board' && 'hidden')}>
@@ -666,10 +666,10 @@ export default function BoardTool({ data }: { data: SetData }) {
   )
 }
 
-const PAGE_TABS: { key: 'board' | 'items' | 'augments'; label: string }[] = [
+const PAGE_TABS: { key: 'board' | 'items' | 'artifacts'; label: string }[] = [
   { key: 'board', label: '배치판' },
   { key: 'items', label: '아이템' },
-  { key: 'augments', label: '증강' },
+  { key: 'artifacts', label: '유물' },
 ]
 
 /** 쉼표나 엔터로 구분해 입력하는 태그 */
