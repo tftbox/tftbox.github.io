@@ -1,9 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ClipboardCopy, FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, TrendingUp, X } from 'lucide-react'
+import { ClipboardCopy, FolderOpen, Gem, Link2, RotateCcw, Save, SavePlus, Swords, X } from 'lucide-react'
 import clsx from 'clsx'
 import type { Deck, PlacedUnit, SetData } from '@/lib/types'
 import { buildIndex, computeTraits, deckCost } from '@/lib/synergy'
@@ -18,6 +17,7 @@ import ItemPool from './ItemPool'
 import UnitSheet from './UnitSheet'
 import DeckPicker from './DeckPicker'
 import SiteNote from '../SiteNote'
+import ComingSoon from '../ComingSoon'
 import { useAuth } from '@/lib/auth-context'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
@@ -31,6 +31,10 @@ export default function BoardTool({ data }: { data: SetData }) {
   const index = useMemo(() => buildIndex(data), [data])
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // 배치판/아이템/증강 탭을 바꿔도 배치판 상태(유닛·이름·태그 등)가 사라지면 안 되니,
+  // 탭 콘텐츠를 조건부로 그리지 않고 항상 그려 둔 채 CSS로만 숨긴다(아래 return 참고)
+  const [pageTab, setPageTab] = useState<'board' | 'items' | 'augments'>('board')
 
   const [units, setUnits] = useState<PlacedUnit[]>([])
   const [name, setName] = useState('')
@@ -406,6 +410,27 @@ export default function BoardTool({ data }: { data: SetData }) {
     <div className="space-y-3">
       <SiteNote />
 
+      <div className="flex gap-1 rounded-xl border border-ink-800 bg-ink-900 p-1">
+        {PAGE_TABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setPageTab(t.key)}
+            className={clsx(
+              'flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+              pageTab === t.key ? 'bg-accent text-ink-950' : 'text-ink-400 hover:bg-ink-850 hover:text-ink-200'
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {pageTab === 'items' && <ComingSoon title="아이템 순위" />}
+      {pageTab === 'augments' && <ComingSoon title="증강체 순위" />}
+
+      {/* 탭을 바꿔도 배치판 상태가 사라지지 않도록, 숨길 때도 계속 그려 둔다 */}
+      <div className={clsx('space-y-3', pageTab !== 'board' && 'hidden')}>
       {/* 덱 이름 · 저장 */}
       <section className="rounded-xl border border-ink-800 bg-ink-900 p-3">
         <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
@@ -481,25 +506,7 @@ export default function BoardTool({ data }: { data: SetData }) {
           </div>
         </div>
 
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <TagEditor tags={tags} onChange={setTags} />
-          <div className="flex shrink-0 items-center gap-1.5 text-xs">
-            <Link
-              href="/decks?tab=items"
-              className="flex items-center gap-1 rounded-lg bg-ink-850 px-2.5 py-1.5 font-medium text-ink-400 transition-colors hover:bg-ink-800 hover:text-ink-200"
-            >
-              <TrendingUp size={13} />
-              아이템 순위
-            </Link>
-            <Link
-              href="/decks?tab=augments"
-              className="flex items-center gap-1 rounded-lg bg-ink-850 px-2.5 py-1.5 font-medium text-ink-400 transition-colors hover:bg-ink-800 hover:text-ink-200"
-            >
-              <TrendingUp size={13} />
-              증강체 순위
-            </Link>
-          </div>
-        </div>
+        <TagEditor tags={tags} onChange={setTags} />
 
         <div className="mt-2 flex items-center gap-3 text-xs text-ink-400">
           <span>
@@ -653,9 +660,16 @@ export default function BoardTool({ data }: { data: SetData }) {
       {pickingDeck && (
         <DeckPicker setNumber={data.set} onPick={loadDeck} onClose={() => setPickingDeck(false)} />
       )}
+      </div>
     </div>
   )
 }
+
+const PAGE_TABS: { key: 'board' | 'items' | 'augments'; label: string }[] = [
+  { key: 'board', label: '배치판' },
+  { key: 'items', label: '아이템' },
+  { key: 'augments', label: '증강' },
+]
 
 /** 쉼표나 엔터로 구분해 입력하는 태그 */
 function TagEditor({ tags, onChange }: { tags: string[]; onChange: (next: string[]) => void }) {
@@ -668,7 +682,7 @@ function TagEditor({ tags, onChange }: { tags: string[]; onChange: (next: string
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="mt-2 flex flex-wrap items-center gap-1.5">
       {tags.map((tag) => (
         <span key={tag} className="flex items-center gap-1 rounded-md bg-ink-800 px-2 py-1 text-[11px] text-ink-200">
           #{tag}

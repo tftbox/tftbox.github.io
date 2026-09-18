@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import clsx from 'clsx'
 import type { SetData } from '@/lib/types'
 import DeckLibrary from './DeckLibrary'
+import ComingSoon from './ComingSoon'
 
 type Tab = 'decks' | 'items' | 'augments'
 
@@ -48,15 +49,6 @@ export default function DeckTabs({ data }: { data: SetData }) {
       {tab === 'decks' && <DeckLibrary data={data} />}
       {tab === 'items' && <ComingSoon title="아이템 순위" />}
       {tab === 'augments' && <ComingSoon title="증강체 순위" />}
-    </div>
-  )
-}
-
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="rounded-xl border border-ink-800 bg-ink-900 p-12 text-center">
-      <p className="text-sm font-semibold text-white">{title}</p>
-      <p className="mt-1 text-xs text-ink-400">준비 중입니다.</p>
     </div>
   )
 }
