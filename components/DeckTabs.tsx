@@ -5,6 +5,7 @@ import clsx from 'clsx'
 import type { SetData } from '@/lib/types'
 import DeckLibrary from './DeckLibrary'
 import ComingSoon from './ComingSoon'
+import ItemRankings from './ItemRankings'
 
 type Tab = 'decks' | 'items' | 'augments'
 
@@ -47,7 +48,7 @@ export default function DeckTabs({ data }: { data: SetData }) {
       </div>
 
       {tab === 'decks' && <DeckLibrary data={data} />}
-      {tab === 'items' && <ComingSoon title="아이템 순위" />}
+      {tab === 'items' && <ItemRankings data={data} />}
       {tab === 'augments' && <ComingSoon title="증강체 순위" />}
     </div>
   )

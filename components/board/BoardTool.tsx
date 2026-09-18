@@ -18,6 +18,7 @@ import UnitSheet from './UnitSheet'
 import DeckPicker from './DeckPicker'
 import SiteNote from '../SiteNote'
 import ComingSoon from '../ComingSoon'
+import ItemRankings from '../ItemRankings'
 import { useAuth } from '@/lib/auth-context'
 import { useDragPlacement, type Cell } from './useDragPlacement'
 
@@ -426,7 +427,7 @@ export default function BoardTool({ data }: { data: SetData }) {
         ))}
       </div>
 
-      {pageTab === 'items' && <ComingSoon title="아이템 순위" />}
+      {pageTab === 'items' && <ItemRankings data={data} />}
       {pageTab === 'augments' && <ComingSoon title="증강체 순위" />}
 
       {/* 탭을 바꿔도 배치판 상태가 사라지지 않도록, 숨길 때도 계속 그려 둔다 */}
