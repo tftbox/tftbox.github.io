@@ -27,6 +27,17 @@ export default function ItemRankings({ data }: { data: SetData }) {
                       <img src={item.icon} alt={item.name} title={item.name} className="h-12 w-12 rounded-lg sm:h-14 sm:w-14" />
                     )}
                     <p className="line-clamp-2 text-center text-[10px] leading-tight text-ink-200">{item.name}</p>
+                    {/* 뭐랑 뭐를 합쳐야 하는지 — 재료 아이콘 두 개 */}
+                    {item.from.length > 0 && (
+                      <div className="flex items-center gap-0.5">
+                        {item.from.map((f, i) => (
+                          <span key={`${f.id}-${i}`} className="flex items-center gap-0.5">
+                            {i > 0 && <span className="text-[9px] text-ink-500">+</span>}
+                            {f.icon && <img src={f.icon} alt={f.name} title={f.name} className="h-4 w-4 rounded-sm" />}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )
               })}
