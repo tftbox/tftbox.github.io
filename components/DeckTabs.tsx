@@ -1,6 +1,7 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import clsx from 'clsx'
 import type { SetData } from '@/lib/types'
 import DeckLibrary from './DeckLibrary'
@@ -19,16 +20,23 @@ const TABS: { key: Tab; label: string }[] = [
 
 /**
  * "내 덱" 페이지 안에서 탭으로 화면을 바꾼다.
- * 지금 탭을 ?tab= 주소에 남겨서, 배치툴 같은 다른 화면에서 특정 탭으로 바로 링크할 수 있게 한다.
+ *
+ * 탭은 화면 안의 상태로만 바꾼다. 예전엔 탭을 누를 때마다 라우터로 주소를 바꿨는데,
+ * 그러면 서버에서 페이지 데이터를 다시 받아 와야 화면이 바뀌어서 네트워크가 느리거나
+ * 실패하면 눌러도 반응이 없었다. 주소(?tab=)는 새로고침해도 그 탭이 유지되도록
+ * 조용히 덧써 두기만 하고, 처음 열 때만 읽는다.
  */
 export default function DeckTabs({ data }: { data: SetData }) {
-  const router = useRouter()
   const searchParams = useSearchParams()
-  const tabParam = searchParams.get('tab')
-  const tab: Tab = tabParam === 'items' || tabParam === 'artifacts' || tabParam === 'emblems' ? tabParam : 'decks'
+  const [tab, setTabState] = useState<Tab>(() => {
+    const param = searchParams.get('tab')
+    return param === 'items' || param === 'artifacts' || param === 'emblems' ? param : 'decks'
+  })
 
   const setTab = (next: Tab) => {
-    router.replace(next === 'decks' ? '/decks' : `/decks?tab=${next}`)
+    setTabState(next)
+    const url = next === 'decks' ? '/decks/' : `/decks/?tab=${next}`
+    window.history.replaceState(window.history.state, '', url)
   }
 
   return (
