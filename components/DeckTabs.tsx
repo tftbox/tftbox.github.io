@@ -6,13 +6,15 @@ import type { SetData } from '@/lib/types'
 import DeckLibrary from './DeckLibrary'
 import ItemRankings from './ItemRankings'
 import ArtifactRankings from './ArtifactRankings'
+import EmblemRankings from './EmblemRankings'
 
-type Tab = 'decks' | 'items' | 'artifacts'
+type Tab = 'decks' | 'items' | 'artifacts' | 'emblems'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'decks', label: '내 덱' },
   { key: 'items', label: '아이템 순위' },
   { key: 'artifacts', label: '유물 순위' },
+  { key: 'emblems', label: '상징 순위' },
 ]
 
 /**
@@ -23,7 +25,7 @@ export default function DeckTabs({ data }: { data: SetData }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const tab: Tab = tabParam === 'items' || tabParam === 'artifacts' ? tabParam : 'decks'
+  const tab: Tab = tabParam === 'items' || tabParam === 'artifacts' || tabParam === 'emblems' ? tabParam : 'decks'
 
   const setTab = (next: Tab) => {
     router.replace(next === 'decks' ? '/decks' : `/decks?tab=${next}`)
@@ -50,6 +52,7 @@ export default function DeckTabs({ data }: { data: SetData }) {
       {tab === 'decks' && <DeckLibrary data={data} />}
       {tab === 'items' && <ItemRankings data={data} />}
       {tab === 'artifacts' && <ArtifactRankings data={data} />}
+      {tab === 'emblems' && <EmblemRankings data={data} />}
     </div>
   )
 }
