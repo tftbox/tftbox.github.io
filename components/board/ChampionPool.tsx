@@ -120,7 +120,7 @@ export default function ChampionPool({ champions, traits, placedIds, pendingCham
             )}
           >
             <div
-              className="aspect-square overflow-hidden rounded-lg border-2"
+              className="aspect-square overflow-hidden rounded-lg border-2 bg-[#3d2c20]"
               style={{ borderColor: COST_COLOR[c.cost] ?? '#6b7280' }}
             >
               {c.icon && <img src={c.icon} alt={c.name} className="h-full w-full object-cover" draggable={false} />}

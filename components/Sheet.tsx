@@ -29,7 +29,7 @@ export default function Sheet({ children, onClose }: { children: React.ReactNode
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 md:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-[#3d2c20]/45 md:items-center"
       onPointerDown={(e) => {
         pressedBackdrop.current = e.target === e.currentTarget
       }}

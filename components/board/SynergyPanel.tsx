@@ -62,12 +62,23 @@ function TraitRow({ item }: { item: ActiveTrait }) {
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded"
           style={{ backgroundColor: color.bg, boxShadow: `inset 0 0 0 1px ${color.ring}` }}
         >
+          {/* 아이콘 모양만 따서 배지 글씨색으로 칠한다 (밝은 배경에서도 보이도록) */}
           {item.trait.icon ? (
-            <img
-              src={item.trait.icon}
-              alt=""
+            <span
+              aria-hidden
               className="h-[18px] w-[18px]"
-              style={{ filter: 'brightness(0) saturate(100%) invert(1)', opacity: item.current ? 1 : 0.45 }}
+              style={{
+                backgroundColor: color.text,
+                opacity: item.current ? 1 : 0.55,
+                maskImage: `url(${item.trait.icon})`,
+                WebkitMaskImage: `url(${item.trait.icon})`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
             />
           ) : null}
         </span>

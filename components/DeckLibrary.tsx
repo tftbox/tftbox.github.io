@@ -144,7 +144,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
               >
                 <Trash2 size={16} />
                 {trashCount > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold text-snow">
                     {trashCount}
                   </span>
                 )}
@@ -258,7 +258,7 @@ export default function DeckLibrary({ data }: { data: SetData }) {
                   src={c.icon ?? ''}
                   alt={c.name}
                   title={c.name}
-                  className="h-9 w-9 shrink-0 rounded border-2 object-cover"
+                  className="h-9 w-9 shrink-0 rounded border-2 bg-[#3d2c20] object-cover"
                   style={{ borderColor: COST_COLOR[c.cost] ?? '#6b7280' }}
                 />
               ))}

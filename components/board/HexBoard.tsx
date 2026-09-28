@@ -99,8 +99,9 @@ export default function HexBoard({
                 )}
                 style={champ ? { backgroundColor: COST_COLOR[champ.cost] ?? '#6b7280' } : undefined}
               >
+                {/* 초상화 뒤 바탕은 진하게 — 흰 아이콘을 쓰는 소환 유닛(돌껍질 나무 등)도 보이게 */}
                 {champ && (
-                  <div className="hex absolute inset-[6%] overflow-hidden bg-ink-900">
+                  <div className="hex absolute inset-[6%] overflow-hidden bg-[#3d2c20]">
                     {champ.icon && (
                       <img src={champ.icon} alt={champ.name} className="h-full w-full object-cover" draggable={false} />
                     )}
@@ -160,7 +161,7 @@ export default function HexBoard({
                     </div>
                   )}
                   {/* 이름 */}
-                  <div className="pointer-events-none absolute inset-x-0 bottom-[16%] truncate px-1 text-center text-[8px] font-medium leading-none text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-[10px]">
+                  <div className="pointer-events-none absolute inset-x-0 bottom-[16%] truncate px-1 text-center text-[8px] font-medium leading-none text-snow drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] sm:text-[10px]">
                     {champ.name}
                   </div>
                   {/*

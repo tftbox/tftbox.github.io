@@ -103,7 +103,7 @@ export default function UnitSheet({ unit, index, onChange, onRemove, onClose }: 
                     className="group relative h-14 flex-1 overflow-hidden rounded-lg bg-ink-850"
                   >
                     {item.icon && <img src={item.icon} alt={item.name} className="h-full w-full object-contain p-1" />}
-                    <span className="absolute inset-0 hidden items-center justify-center bg-black/70 text-[10px] font-semibold text-white group-hover:flex">
+                    <span className="absolute inset-0 hidden items-center justify-center bg-black/70 text-[10px] font-semibold text-snow group-hover:flex">
                       해제
                     </span>
                   </button>

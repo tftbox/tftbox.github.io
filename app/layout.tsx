@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Jua } from 'next/font/google'
 import './globals.css'
 import NavBar from '@/components/NavBar'
 import { AuthProvider } from '@/lib/auth-context'
@@ -9,8 +10,11 @@ export const metadata: Metadata = {
   description: '배치 · 유물 · 상징을 한 곳에서 보는 롤토체스 도구',
 }
 
+// 사이트 이름에만 쓰는 둥근 글씨체 (빌드 때 내려받아 같이 배포된다)
+const jua = Jua({ weight: '400', subsets: ['latin'], variable: '--font-jua', display: 'swap' })
+
 export const viewport: Viewport = {
-  themeColor: '#0a0d14',
+  themeColor: '#fbf4e8',
   // 배치판을 손가락으로 확대할 일이 있으므로 확대를 막지 않는다
   width: 'device-width',
   initialScale: 1,
@@ -18,7 +22,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={jua.variable}>
       <body>
         <AuthProvider>
           <NavBar setNumber={CURRENT_SET} />

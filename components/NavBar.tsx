@@ -43,7 +43,7 @@ export default function NavBar({ setNumber }: { setNumber: number }) {
       <header className="sticky top-0 z-40 hidden border-b border-ink-800 bg-ink-950/90 backdrop-blur md:block">
         <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-6 px-5">
           <Link href="/" className="flex items-baseline gap-2">
-            <span className="text-lg font-bold tracking-tight text-white">{SITE_NAME}</span>
+            <span className="font-cute text-xl text-accent">{SITE_NAME}</span>
             <span className="text-xs text-ink-400">시즌 {setNumber}</span>
           </Link>
           <nav className="flex items-center gap-1">
@@ -67,7 +67,7 @@ export default function NavBar({ setNumber }: { setNumber: number }) {
 
       {/* 모바일: 상단 타이틀 + 하단 탭바 */}
       <header className="sticky top-0 z-40 flex h-12 items-center justify-between border-b border-ink-800 bg-ink-950/90 px-4 backdrop-blur md:hidden">
-        <span className="min-w-0 flex-1 truncate font-bold text-white">{SITE_NAME}</span>
+        <span className="font-cute min-w-0 flex-1 truncate text-lg text-accent">{SITE_NAME}</span>
         <span className="shrink-0 pl-2 text-xs text-ink-400">시즌 {setNumber}</span>
         {authButton(16, clsx('shrink-0 rounded-lg p-1.5 pl-2', isOwner ? 'text-accent' : 'text-ink-500'))}
       </header>
