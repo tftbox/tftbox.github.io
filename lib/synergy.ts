@@ -126,10 +126,10 @@ export const COST_COLOR: Record<number, string> = {
 
 /** 특성 단계별 배지 색 */
 export const STYLE_COLOR: Record<TraitStyle, { bg: string; text: string; ring: string }> = {
-  none: { bg: '#efe6d8', text: '#9c8b78', ring: '#dccfbc' },
-  bronze: { bg: '#f6dfc6', text: '#9a5a24', ring: '#d9a877' },
-  silver: { bg: '#e6e9ee', text: '#56606d', ring: '#b3bcc8' },
-  gold: { bg: '#fbecb6', text: '#8a6410', ring: '#e3c060' },
-  unique: { bg: '#d6f3e3', text: '#1f7a4d', ring: '#8fd3ae' },
-  prismatic: { bg: '#efe0fb', text: '#7a3fb0', ring: '#c9a3ee' },
+  none: { bg: '#ddd2c1', text: '#86766a', ring: '#c9baa3' },
+  bronze: { bg: '#e6cfb6', text: '#84502a', ring: '#c9a07c' },
+  silver: { bg: '#d9dbdc', text: '#50585f', ring: '#aeb4ba' },
+  gold: { bg: '#e8d9a8', text: '#735a1c', ring: '#c9ad62' },
+  unique: { bg: '#cfe0d2', text: '#2b6647', ring: '#95bda3' },
+  prismatic: { bg: '#ddd2e6', text: '#664489', ring: '#b39fca' },
 }

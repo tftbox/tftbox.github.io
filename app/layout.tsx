@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const jua = Jua({ weight: '400', subsets: ['latin'], variable: '--font-jua', display: 'swap' })
 
 export const viewport: Viewport = {
-  themeColor: '#fbf4e8',
+  themeColor: '#e8ddcb',
   // 배치판을 손가락으로 확대할 일이 있으므로 확대를 막지 않는다
   width: 'device-width',
   initialScale: 1,

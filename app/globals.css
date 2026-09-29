@@ -1,33 +1,33 @@
 @import "tailwindcss";
 
 /*
- * 베이지 테마. 이름(ink-950 …)은 예전 어두운 테마의 "역할" 그대로 쓴다:
+ * 차분한 라떼 톤 테마. 이름(ink-950 …)은 예전 어두운 테마의 "역할" 그대로 쓴다:
  * 950 = 페이지 바탕, 900 = 카드, 850 = 입력칸 · 칩, 800 = 테두리, 400 = 흐린 글씨, 200 = 본문 글씨.
+ * 눈이 부시지 않도록 카드도 흰색이 아닌 베이지로 두고, 강조색은 채도를 낮춘 더스티 로즈다.
  * text-white는 "진한 글씨" 용도로 곳곳에 쓰여 있어서 진한 갈색으로 바꿔 두고,
  * 초상화 위 글씨처럼 진짜 흰색이 필요한 곳은 text-snow를 쓴다.
- * 강조색(로즈)은 그 위에 크림색 글씨(text-ink-950)를 얹어도, 크림 바탕에 글씨로 써도
- * 읽히도록 적당히 진하게 잡았다.
+ * 강조색은 그 위에 바탕색 글씨(text-ink-950)를 얹어도, 바탕에 글씨로 써도 읽히는 진하기다.
  */
 @theme {
-  --color-ink-950: #fbf4e8;
-  --color-ink-900: #fffaf3;
-  --color-ink-850: #f4e9d8;
-  --color-ink-800: #ecdcc4;
-  --color-ink-700: #e0cba9;
-  --color-ink-600: #cdb38e;
-  --color-ink-500: #b39a7c;
-  --color-ink-400: #957c63;
-  --color-ink-300: #7a6350;
-  --color-ink-200: #5c4636;
+  --color-ink-950: #e8ddcb;
+  --color-ink-900: #f0e7d8;
+  --color-ink-850: #e3d6c1;
+  --color-ink-800: #d6c6ad;
+  --color-ink-700: #cbb899;
+  --color-ink-600: #b8a283;
+  --color-ink-500: #a08a70;
+  --color-ink-400: #7a6552;
+  --color-ink-300: #65513f;
+  --color-ink-200: #4e3d30;
 
-  --color-white: #3d2c20;
+  --color-white: #3a2c22;
   --color-snow: #ffffff;
 
-  --color-accent: #c45a70;
-  --color-accent-dim: #efc3cb;
+  --color-accent: #9c5f6b;
+  --color-accent-dim: #d9bcc0;
 
-  --color-red-400: #cf4a4a;
-  --color-amber-400: #d99a1e;
+  --color-red-400: #b0514d;
+  --color-amber-400: #c08a2c;
 
   --font-cute: var(--font-jua), 'Pretendard', sans-serif;
 }

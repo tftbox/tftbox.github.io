@@ -8,9 +8,9 @@ export interface TierRow {
 }
 
 export const TIER_COLOR: Record<Tier, { bg: string; text: string }> = {
-  S: { bg: '#e0596b', text: '#2a0d12' },
-  A: { bg: '#e2924e', text: '#2e1a08' },
-  B: { bg: '#d9bd5a', text: '#2e2508' },
-  C: { bg: '#cbd66c', text: '#232608' },
-  D: { bg: '#7fc86a', text: '#10260a' },
+  S: { bg: '#c9828a', text: '#3a1b20' },
+  A: { bg: '#cf9f78', text: '#3b2412' },
+  B: { bg: '#c9b57c', text: '#382d10' },
+  C: { bg: '#b3b98a', text: '#2c2f12' },
+  D: { bg: '#93b58a', text: '#1b2d16' },
 }
